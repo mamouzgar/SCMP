@@ -32,11 +32,13 @@ source("SCMP/analysis/scripts/00-feature-gen-functions.R")
 ######################
 ## GLOBAL VARIABLES ##
 ######################
+cat("reading global variables")
+
 dat <- data.table::fread("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/processed_LDaxes.csv", sep = ",", stringsAsFactors = FALSE)
 dat[ , "cell.id"] <- 1:nrow(dat)
 
 output_filepath <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/" ## output directory 
-subset_number <- 100 ## # of cells (rows) to include in analysis
+subset_number <- 50000 ## # of cells (rows) to include in analysis
 
 ## relevant features in analysis 
 # CD.Ig.markers <- c("IgL", "IgK", "CD235ab", "CD71", "CD61", "CD3", "CD8", "CD2", "CD5", "CD4", "CD7", "CD11c", "CD23", "CD123", "CD56", "CD45", "CD10", "CD13", "CD117", "CD34", "CD20", "CD19", "CD22", "CD79a", "CD15", "CD33", "CD14", "CD64", "CD16" , "CD38" )
@@ -53,6 +55,9 @@ dat.clean <- dat %>%
 ## write cell.ids used in this analysis
 write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
 
+
+cat("beginning analysis")
+
 #################################
 ## (1) all markers
 #################################
@@ -61,7 +66,6 @@ write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-
 ## data characteristics and output
 features_included <- "all-markers"
 relevant_features <- all.markers
-
 output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_included, "_")
 
 data.input <- dat.clean %>%
@@ -72,7 +76,7 @@ data.input <- dat.clean %>%
 pca_function(data.input)
 tsne_function(data.input)
 umap_function(data.input)
-phate_function(data.input) ## reticulate::use_python("/Users/mamouzgar/opt/anaconda3/bin/python") ## solution if phate does not work
+phate_function(data.input, gamma.value = 0) ## reticulate::use_python("/Users/mamouzgar/opt/anaconda3/bin/python") ## solution if phate does not work
 # dmap_function(data.input) ## not ready
 
 
@@ -88,19 +92,15 @@ features_included <- "CD-markers"
 relevant_features <- CD.Ig.markers
 output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_included, "_")
 
-## data
-
 data.input <- dat.clean %>%
   dplyr::select("gate", all_of(relevant_features))
-
-
 ##########
 ## MAIN ##
 ##########
 pca_function(data.input)
 tsne_function(data.input)
 umap_function(data.input)
-phate_function(data.input) ## reticulate::use_python("/Users/mamouzgar/opt/anaconda3/bin/python") ## solution if phate does not work
+phate_function(data.input, gamma.value = 0) ## reticulate::use_python("/Users/mamouzgar/opt/anaconda3/bin/python") ## solution if phate does not work
 # dmap_function(data.input) ## not ready
 
 
@@ -114,19 +114,15 @@ features_included <- "scatterbodies"
 relevant_features <- scatterbodies
 output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_included, "_")
 
-## data
-
 data.input <- dat.clean %>%
   dplyr::select("gate", all_of(relevant_features))
-
-
 ##########
 ## MAIN ##
 ##########
 pca_function(data.input)
 tsne_function(data.input)
 umap_function(data.input)
-phate_function(data.input) ## reticulate::use_python("/Users/mamouzgar/opt/anaconda3/bin/python") ## solution if phate does not work
+phate_function(data.input, gamma.value = 0) ## reticulate::use_python("/Users/mamouzgar/opt/anaconda3/bin/python") ## solution if phate does not work
 # dmap_function(data.input) ## not ready
 
 

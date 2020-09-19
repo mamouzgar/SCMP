@@ -13,7 +13,7 @@
 # library(umap)
 # library(phateR)
 # library(diffusionMap)
-set.seed(0)
+# set.seed(0)
 
 ##################################
 ## FEATURE-GENERATING FUNCTIONS ##
