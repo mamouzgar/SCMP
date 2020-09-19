@@ -45,7 +45,7 @@
 ##### USER INPUTS #####
 
 # path to your processed csv file
-path <- "~/example/ex.csv"
+path <- "/Users/mamouzgar/phd-projects/SCMP/FlowRepository_FR-FCM-Z2DX_files/processed_mm.csv"
 # list of channels you want explored for dimensionality reduction
 channels <- c("WGA_106", "beta_actin", "HP1b", "rRNA", "lamin_A_C", "lamin_B",
               "lysozyme","VAMP_7", "lactoferrin", "MPO", "serpin_B1", "CD45")
@@ -213,3 +213,7 @@ train.y <- dat[gate!="ungated", gate]
 
 coefficients <- hybridSubsetSelection(x=train.x, y=train.y)
 dat <- makeAxes()
+
+fwrite(dat, file = "/Users/mamouzgar/phd-projects/SCMP/data/processed_LDaxes.csv")
+
+

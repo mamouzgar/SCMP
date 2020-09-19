@@ -44,7 +44,7 @@
 ##### USER INPUTS #####
 
 ### Path to folder containing fcs files
-path <- "~/example/"
+path <- "/Users/mamouzgar/phd-projects/SCMP/FlowRepository_FR-FCM-Z2DX_files/"
 
 
 
