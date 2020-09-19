@@ -21,43 +21,51 @@ set.seed(0)
 ## PCA
 ## data is centered and scaled
 pca_function <- function(input.data) { 
-  pca.data <- prcomp(dplyr::select(input.data, -gate), center = TRUE, scale = TRUE)
-  pca.data <- data.frame(pca.data$x) %>%
+  pca.model <- prcomp(dplyr::select(input.data, -gate), center = TRUE, scale = TRUE)
+  pca.data <- data.frame(pca.model$x) %>%
     dplyr::mutate(gate = input.data[ , "gate"])
   
   write.table(pca.data, paste0(output_filename, "pca.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
+  saveRDS(pca.model, paste0(output_filename, "pca.RDS"))
+  
   return(pca.data)
 }
 
 
 ## tsne (with PCA)
 ## note: uses Rtsne's internal PCA, generates 2-dimensions
-## perplexity is defaulted to 5% of data size if arguement is not provided
+## perplexity is defaulted to 25 if arguement is not provided
+## potential future added functionality: perplexity is defaulted to 5% of data size if arguement is not provided
 ## other features set to default 
 tsne_function <- function(input.data, perplexity.value = NULL)  { 
   if(is.null(perplexity.value)) { 
-    perplexity.value  <- nrow(input.data)*0.05
+    # perplexity.value  <- nrow(input.data)*0.05
+    perplexity.value  <- 25
   }
   
-  tsne.data <- Rtsne(dplyr::select(input.data, -gate), dims=2, 
+  tsne.model <- Rtsne(dplyr::select(input.data, -gate), dims=2, 
                      perplexity= perplexity.value , 
                      pca = TRUE, pca_center = TRUE, pca_scale = TRUE, normalize = TRUE, 
                      theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
-  tsne.data <- data.frame(tsne.data$Y) %>%
+  tsne.data <- data.frame(tsne.model$Y) %>%
     dplyr::mutate(gate = input.data[ , "gate"])
   
   write.table(tsne.data, paste0(output_filename, "tsne.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
+  saveRDS(tsne.model, paste0(output_filename, "tsne.RDS"))
+  
   return(tsne.data)
 }
 
 
 ## UMAP
 umap_function <- function(input.data)  {
-  umap.data <- umap(dplyr::select(input.data, -gate))
-  umap.data <- data.frame(umap.data$layout) %>%
+  umap.model <- umap(dplyr::select(input.data, -gate))
+  umap.data <- data.frame(umap.model$layout) %>%
     dplyr::mutate(gate = input.data[ , "gate"])
   
   write.table(umap.data, paste0(output_filename, "umap.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
+  saveRDS(umap.model, paste0(output_filename, "umap.RDS"))
+  
   return(umap.data)
 }
 
@@ -83,11 +91,12 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
   } 
   
   
-  phate.data <- phate(dplyr::select(input.data, -gate), knn = knn.value, decay = decay.value, )
-  # phate.data <- data.frame(phate.data$layout) %>%
-  #   dplyr::mutate(gate = input.data[ , "gate"])
+  phate.model <- phate(dplyr::select(input.data, -gate), knn = knn.value, decay = decay.value, )
+  phate.data <- data.frame(phate.model$embedding) %>%
+    dplyr::mutate(gate = input.data[ , "gate"])
   
   write.table(phate.data, paste0(output_filename, "phate.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
+  saveRDS(phate.model, paste0(output_filename, "phate.RDS"))
   
   return(phate.data)
 }
@@ -103,11 +112,13 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
 #   
 #   dists.data <- dist(dplyr::select(input.data, -gate),) ## compute pairwise distance matrix
 #   
-#   dmap.data <- diffuse(dists.data)
-#   dmap.data <- data.frame(dmap.data$layout) %>%
+#   dmap.model <- diffuse(dists.data)
+#   dmap.data <- data.frame(dmap.model$layout) %>%
 #     dplyr::mutate(gate = input.data[ , "gate"])
 #   
 #   write.table(dmap.data, paste0(output_filename, "umap.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
+# saveRDS(dmap.model, paste0(output_filename, "dmap.RDS"))
+
 #   return(dmap.data)
 # }
 
