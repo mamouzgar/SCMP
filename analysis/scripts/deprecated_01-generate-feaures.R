@@ -7,7 +7,7 @@
 #' Requires a filepath to save outputs
 #' Requires a # to subset the data on
 #' Requires you to provide a name for the features included in this analysis
-rm(list = ls())
+
 library(tidyverse)
 library(factoextra)
 library(Rtsne)
@@ -23,7 +23,11 @@ source("SCMP/analysis/scripts/00-feature-gen-functions.R")
 
 
 ###############################################################
-## (1) LDA-matched channels - the key channels of interest
+## script is manually set to run for 3 different marker sets ##
+## (1) all markers
+## (2) CD markers only (aka, exclude scatterbodies)
+## (3) scatterbodies only
+## (4) LDA-matched channels - the key channels of interest
 ###############################################################
 
 ######################

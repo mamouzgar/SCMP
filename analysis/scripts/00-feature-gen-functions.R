@@ -14,10 +14,18 @@
 # library(phateR)
 # library(diffusionMap)
 # set.seed(0)
-
+##################################
+##################################
 ##################################
 ## FEATURE-GENERATING FUNCTIONS ##
 ##################################
+##################################
+##################################
+
+#########################################
+## CLUSTERING OR DIM-REDUCTION METHODS ## 
+#########################################
+
 ## PCA
 ## data is centered and scaled
 pca_function <- function(input.data) { 
@@ -25,10 +33,12 @@ pca_function <- function(input.data) {
   pca.data <- data.frame(pca.model$x) %>%
     dplyr::mutate(gate = input.data[ , "gate"])
   
+  output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary, "_")
   write.table(pca.data, paste0(output_filename, "pca.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
   saveRDS(pca.model, paste0(output_filename, "pca.RDS"))
   
-  return(pca.data)
+  print("pca is complete")
+  # return(pca.data)
 }
 
 
@@ -50,23 +60,27 @@ tsne_function <- function(input.data, perplexity.value = NULL)  {
   tsne.data <- data.frame(tsne.model$Y) %>%
     dplyr::mutate(gate = input.data[ , "gate"])
   
+  output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary, "_")
   write.table(tsne.data, paste0(output_filename, "tsne.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
   saveRDS(tsne.model, paste0(output_filename, "tsne.RDS"))
   
-  return(tsne.data)
+  print("tsne is complete")
+  # return(tsne.data)
 }
 
 
 ## UMAP
-umap_function <- function(input.data)  {
-  umap.model <- umap(dplyr::select(input.data, -gate))
+umap_function <- function(input.data, config = NULL )  {
+  umap.model <- umap(dplyr::select(input.data, -gate), config = config)
   umap.data <- data.frame(umap.model$layout) %>%
     dplyr::mutate(gate = input.data[ , "gate"])
   
+  output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary, "_")
   write.table(umap.data, paste0(output_filename, "umap.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
   saveRDS(umap.model, paste0(output_filename, "umap.RDS"))
   
-  return(umap.data)
+  print("umap is complete")
+  # return(umap.data)
 }
 
 
@@ -95,14 +109,13 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
   phate.data <- data.frame(phate.model$embedding) %>%
     dplyr::mutate(gate = input.data[ , "gate"])
   
+  output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary, "_")
   write.table(phate.data, paste0(output_filename, "phate.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
   saveRDS(phate.model, paste0(output_filename, "phate.RDS"))
   
-  return(phate.data)
+  print("phate is complete")
+  # return(phate.data)
 }
-
-
-
 
 ## INCOMPLETE
 ## diffusion map 
@@ -121,12 +134,61 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
 
 #   return(dmap.data)
 # }
-
-
-## diffusion map
+#####################################################################################################################
 
 
 
+##########################################################
+## DATA PRE-PROCESSING FUNCTIONS FOR CLUSTERING METHODS ##
+##########################################################
+
+## generates the subset of data used for the clustering
+## subset_number : # of cells to subset
+## features : the channels  that are included in the run
+## features_summary : a summary of the features (eg, "scatterbodies" or "CD-markers" )
+generate_subset <- function(dat, subset_number = NULL, features, features_summary, output_filepath = output_filepath) { 
+  ## generates NEW subset of data
+  if ( is.null(subset_number) | subset_number == "all") { 
+    dat.clean <- dat %>%
+      dplyr::filter(gate != "ungated") %>%
+      tibble::column_to_rownames("cell.id") %>%
+      dplyr::select( -Time, -Event_length, -Bead_1, -DNA_1, -DNA_2, -Viability, -ld1, -ld2, -beadDist, -file) ## remove irrelevant markers - confirm with David
+    subset_number = nrow(dat.clean)
+  } else if (!is.null(subset_number)) { 
+    dat.clean <- dat %>%
+      dplyr::filter(gate != "ungated") %>%
+      dplyr::sample_n(subset_number)  %>%
+      tibble::column_to_rownames("cell.id") %>%
+      dplyr::select( -Time, -Event_length, -Bead_1, -DNA_1, -DNA_2, -Viability, -ld1, -ld2, -beadDist, -file) ## remove irrelevant markers - confirm with David
+    
+    subset_number = subset_number
+  }
+  
+  write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
+  
+  ## data characteristics and output
+  output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary, "_")
+  data.input <- dat.clean %>%
+    dplyr::select("gate", all_of(features))
+  
+  return(data.input)
+}
+
+
+## runS various clustering functions
+run_algorithms <- function(data.input = data.input) { 
+  
+  pca_function(data.input)
+  tsne_function(data.input)
+  phate_function(data.input, gamma.value = 0)
+  
+  ## umap parameter tuning
+  custom.config <- umap.defaults
+  custom.config$a <- 1.58
+  custom.config$b <- 2.5
+  umap_function(data.input, config = custom.config)
+  
+}
 
 
 
