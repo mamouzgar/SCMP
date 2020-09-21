@@ -13,7 +13,7 @@
 # library(umap)
 # library(phateR)
 # library(diffusionMap)
-# set.seed(0)
+set.seed(0)
 ##################################
 ##################################
 ##################################
@@ -153,16 +153,20 @@ generate_subset <- function(dat, subset_number = NULL, features, features_summar
       dplyr::filter(gate != "ungated") %>%
       tibble::column_to_rownames("cell.id") %>%
       dplyr::select( -Time, -Event_length, -Bead_1, -DNA_1, -DNA_2, -Viability, -ld1, -ld2, -beadDist, -file) ## remove irrelevant markers - confirm with David
-
-        subset_number <<- subset_number
+    
+    subset_number <<- subset_number
+    
   } else if (!is.null(subset_number)) { 
     dat.clean <- dat %>%
       dplyr::filter(gate != "ungated") %>%
-      dplyr::sample_n(subset_number)  %>%
       tibble::column_to_rownames("cell.id") %>%
       dplyr::select( -Time, -Event_length, -Bead_1, -DNA_1, -DNA_2, -Viability, -ld1, -ld2, -beadDist, -file) ## remove irrelevant markers - confirm with David
     
-    subset_number <<- subset_number
+    subset_fraction <- round(subset_number/nrow(dat.clean), digits = 30)
+    subset_rows <- createDataPartition(dat.clean[ , "gate"], p =subset_fraction)
+    
+    dat.clean <- dat.clean[ subset_rows[[1]], ] 
+    subset_number <<- nrow(dat.clean)
   }
   
   write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
@@ -174,6 +178,7 @@ generate_subset <- function(dat, subset_number = NULL, features, features_summar
   
   return(data.input)
 }
+
 
 
 ## runS various clustering functions

@@ -103,10 +103,10 @@ do.call("grid.arrange", c(plots.list, ncol = 4))
 dev.off()
   
   
-pdf(paste0(plot.output.path, "legend-labels.pdf"), height = 1.5, width = 1.5)
+# pdf(paste0(plot.output.path, "legend-labels.pdf"), height = 1.5, width = 1.5)
 # plot(get_legend(plots.list[[8]] + theme(legend.position="right")))
-plot(get_legend(density_2d_plot(dat.clean, cluster.method = "LDA", cell_counts = 176664) + theme(legend.position="right"))
-dev.off()
+# sp_plot(dat.clean, cluster.method = "LDA", cell_counts = 176664) + theme(legend.position="right"))
+# dev.off()
 
 
 
@@ -124,8 +124,8 @@ dat.clean <- dat %>%
 density_2d_plot(dat.clean, cluster.method = "LDA", cell_counts = 176664)
 
 
-pdf(paste0(plot.output.path, "LDA-plot_all-cells.pdf"), height = 2, width = 2)
-density_2d_plot(dat.clean, cluster.method = "LDA", cell_counts = 176664) 
+pdf(paste0(plot.output.path, "LDA-plot_all-cells.pdf"), height = 2, width = 3)
+density_2d_plot(dat.clean, cluster.method = "LDA", cell_counts = 176664)+theme(legend.position="right")
 dev.off()
 
 
