@@ -50,9 +50,10 @@ features_summary <- "LDA-scatterbodies"
 ##########
 
 ## functions
-subset_numbers <- c(1000,10000,100000, "all" )
+subset_numbers <- c(1000,10000,100000, 176664 )
 
 lapply(subset_numbers, function(subset_number) { 
+  subset_number <<- subset_number ## assign to global environment to pass to other functions easily
   data.input <- generate_subset(dat = dat, subset_number = subset_number, features = channels, features_summary = features_summary, output_filepath=output_filepath)
   run_algorithms(data.input = data.input)
   })

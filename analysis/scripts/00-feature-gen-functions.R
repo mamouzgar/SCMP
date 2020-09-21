@@ -153,7 +153,8 @@ generate_subset <- function(dat, subset_number = NULL, features, features_summar
       dplyr::filter(gate != "ungated") %>%
       tibble::column_to_rownames("cell.id") %>%
       dplyr::select( -Time, -Event_length, -Bead_1, -DNA_1, -DNA_2, -Viability, -ld1, -ld2, -beadDist, -file) ## remove irrelevant markers - confirm with David
-    subset_number = nrow(dat.clean)
+
+        subset_number <<- subset_number
   } else if (!is.null(subset_number)) { 
     dat.clean <- dat %>%
       dplyr::filter(gate != "ungated") %>%
@@ -161,7 +162,7 @@ generate_subset <- function(dat, subset_number = NULL, features, features_summar
       tibble::column_to_rownames("cell.id") %>%
       dplyr::select( -Time, -Event_length, -Bead_1, -DNA_1, -DNA_2, -Viability, -ld1, -ld2, -beadDist, -file) ## remove irrelevant markers - confirm with David
     
-    subset_number = subset_number
+    subset_number <<- subset_number
   }
   
   write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
