@@ -19,6 +19,7 @@ setwd("/Users/mamouzgar/phd-projects")
 density_2d_plot <- function(input.data, cluster.method = NULL, cell_counts = NULL) { 
   d2d.plot <- ggplot(input.data, aes(x=axis1,y = axis2)) +
     geom_density_2d(aes(color = gate)) + 
+    scale_color_brewer(palette = "Set1") +
     theme_pubr() + 
     theme(legend.position = "none") +
     ggtitle(paste(cluster.method, cell_counts,sep = "-")) + 
@@ -103,12 +104,8 @@ dev.off()
   
   
 pdf(paste0(plot.output.path, "legend-labels.pdf"), height = 1.5, width = 1.5)
-plot(get_legend(ggscatter(data.table::fread(result.files$result.files[6]) %>%
-                             mutate(gate = factor(gate, levels = c("monocyte","lymphocyte","erythroid","blast", "neutrophil"))) %>%
-                             .[, c(1,2, ncol(.))] %>%
-                             dplyr::rename(axis1 = X1 , axis2= X2),
-                           x = "axis1", y = "axis2", color = "gate", legend="top")+ 
-       theme_minimal()))
+# plot(get_legend(plots.list[[8]] + theme(legend.position="right")))
+plot(get_legend(density_2d_plot(dat.clean, cluster.method = "LDA", cell_counts = 176664) + theme(legend.position="right"))
 dev.off()
 
 
@@ -128,7 +125,7 @@ density_2d_plot(dat.clean, cluster.method = "LDA", cell_counts = 176664)
 
 
 pdf(paste0(plot.output.path, "LDA-plot_all-cells.pdf"), height = 2, width = 2)
-lda.plot <- density_2d_plot(dat.clean, cluster.method = "LDA", cell_counts = 176664) 
+density_2d_plot(dat.clean, cluster.method = "LDA", cell_counts = 176664) 
 dev.off()
 
 
