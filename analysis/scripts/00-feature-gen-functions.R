@@ -4,7 +4,7 @@
 #' This script does not need to be edited unless changes to the fundamental methods want to be made.
 #' 
 #' Input variables are edited in: 01-generate-features.R and this script requires the following inputs:
-#' Requires cell-types to be specified by a column named "gate"
+#' Requires cell-types to be specified by a column named "labels"
 #' Requires a filepath to save outputs
 #' Requires a # to subset the data on
 # library(tidyverse)
@@ -29,58 +29,77 @@ set.seed(0)
 ## PCA
 ## data is centered and scaled
 pca_function <- function(input.data) { 
-  pca.model <- prcomp(dplyr::select(input.data, -gate), center = TRUE, scale = TRUE)
+  pca.model <- prcomp(dplyr::select(input.data, -labels), center = TRUE, scale = TRUE)
   pca.data <- data.frame(pca.model$x) %>%
-    dplyr::mutate(gate = input.data[ , "gate"])
+    dplyr::mutate(labels = input.data[ , "labels"])
   
-  output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary, "_")
-  write.table(pca.data, paste0(output_filename, "pca.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
-  saveRDS(pca.model, paste0(output_filename, "pca.RDS"))
+  algorithm_filename <<-  paste0(output_filename, "pca.csv")
+  write.table(pca.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
+  saveRDS(pca.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "pca.RDS"))
   
   print("pca is complete")
-  # return(pca.data)
+  return(pca.data)
 }
 
 
 ## tsne (with PCA)
-## note: uses Rtsne's internal PCA, generates 2-dimensions
+## note: does NOT use Rtsne's internal PCA by default, generates 2-dimensions. 
+## Without PCA: Scales and normalized the data 
+## With PCA: scales and centers the data prior to PCA, uses to
 ## perplexity is defaulted to 25 if arguement is not provided
 ## potential future added functionality: perplexity is defaulted to 5% of data size if arguement is not provided
 ## other features set to default 
-tsne_function <- function(input.data, perplexity.value = NULL)  { 
+tsne_function <- function(input.data, pca.prior = FALSE, perplexity.value = NULL)  { 
   if(is.null(perplexity.value)) { 
     # perplexity.value  <- nrow(input.data)*0.05
     perplexity.value  <- 25
   }
   
-  tsne.model <- Rtsne(dplyr::select(input.data, -gate), dims=2, 
+  if (pca.prior == FALSE) { 
+    tsne.model <- Rtsne(dplyr::select(input.data, -labels), dims=2, 
+                        perplexity= perplexity.value , 
+                        pca = FALSE, pca_center = FALSE, pca_scale = TRUE, normalize = TRUE, 
+                        theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
+  } else if (pca.prior == TRUE) { 
+    tsne.model <- Rtsne(dplyr::select(input.data, -labels), dims=2, 
+                        perplexity= perplexity.value , 
+                        pca = TRUE, pca_center = TRUE, pca_scale = TRUE, normalize = TRUE, 
+                        theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
+    }
+  
+  tsne.model <- Rtsne(dplyr::select(input.data, -labels), dims=2, 
                      perplexity= perplexity.value , 
                      pca = TRUE, pca_center = TRUE, pca_scale = TRUE, normalize = TRUE, 
                      theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
   tsne.data <- data.frame(tsne.model$Y) %>%
-    dplyr::mutate(gate = input.data[ , "gate"])
+    dplyr::mutate(labels = input.data[ , "labels"])
   
-  output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary, "_")
-  write.table(tsne.data, paste0(output_filename, "tsne.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
-  saveRDS(tsne.model, paste0(output_filename, "tsne.RDS"))
+  algorithm_filename <<- paste0(output_filename, "tsne.csv")
+  write.table(tsne.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
+  saveRDS(tsne.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "tsne.RDS"))
   
   print("tsne is complete")
-  # return(tsne.data)
+  return(tsne.data)
 }
 
 
 ## UMAP
 umap_function <- function(input.data, config = NULL )  {
-  umap.model <- umap(dplyr::select(input.data, -gate), config = config)
-  umap.data <- data.frame(umap.model$layout) %>%
-    dplyr::mutate(gate = input.data[ , "gate"])
+  ## umap parameter tuning
+  custom.config <- umap.defaults
+  custom.config$a <- 0.3
+  custom.config$b <- 0.82
   
-  output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary, "_")
-  write.table(umap.data, paste0(output_filename, "umap.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
-  saveRDS(umap.model, paste0(output_filename, "umap.RDS"))
+  umap.model <- umap(dplyr::select(input.data, -labels), config = config)
+  umap.data <- data.frame(umap.model$layout) %>%
+    dplyr::mutate(labels = input.data[ , "labels"])
+  
+  algorithm_filename <<- paste0(output_filename, "umap.csv")
+  write.table(umap.data, algorithm_filename,sep = ",", row.names = FALSE, col.names = TRUE)
+  saveRDS(umap.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "umap.RDS"))
   
   print("umap is complete")
-  # return(umap.data)
+  return(umap.data)
 }
 
 
@@ -105,16 +124,16 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
   } 
   
   
-  phate.model <- phate(dplyr::select(input.data, -gate), knn = knn.value, decay = decay.value, )
+  phate.model <- phate(dplyr::select(input.data, -labels), knn = knn.value, decay = decay.value, )
   phate.data <- data.frame(phate.model$embedding) %>%
-    dplyr::mutate(gate = input.data[ , "gate"])
+    dplyr::mutate(labels = input.data[ , "labels"])
   
-  output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary, "_")
-  write.table(phate.data, paste0(output_filename, "phate.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
-  saveRDS(phate.model, paste0(output_filename, "phate.RDS"))
+  algorithm_filename <<- paste0(output_filename, "phate.csv")
+  write.table(phate.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
+  saveRDS(phate.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "phate.RDS"))
   
   print("phate is complete")
-  # return(phate.data)
+  return(phate.data)
 }
 
 ## INCOMPLETE
@@ -123,11 +142,11 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
 # Computes the Markov transition probability matrix, and its eigenvalues and left & right eigenvectors.
 # dmap_function <- function(input.data)  {
 #   
-#   dists.data <- dist(dplyr::select(input.data, -gate),) ## compute pairwise distance matrix
+#   dists.data <- dist(dplyr::select(input.data, -labels),) ## compute pairwise distance matrix
 #   
 #   dmap.model <- diffuse(dists.data)
 #   dmap.data <- data.frame(dmap.model$layout) %>%
-#     dplyr::mutate(gate = input.data[ , "gate"])
+#     dplyr::mutate(labels = input.data[ , "labels"])
 #   
 #   write.table(dmap.data, paste0(output_filename, "umap.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
 # saveRDS(dmap.model, paste0(output_filename, "dmap.RDS"))
@@ -141,62 +160,124 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
 ##########################################################
 ## DATA PRE-PROCESSING FUNCTIONS FOR CLUSTERING METHODS ##
 ##########################################################
-
+##
 ## generates the subset of data used for the clustering
+## dat = dataset with the classification feature of interest column named as "label" 
 ## subset_number : # of cells to subset
 ## features : the channels  that are included in the run
 ## features_summary : a summary of the features (eg, "scatterbodies" or "CD-markers" )
-generate_subset <- function(dat, subset_number = NULL, features, features_summary, output_filepath = output_filepath) { 
+generate_subset <- function(data, subset_number, label.levels = NULL, balanced_data = "unbalanced", features, features_summary, output_filepath = output_filepath) { 
+
   ## generates NEW subset of data
-  if ( is.null(subset_number) | subset_number == "all") { 
-    dat.clean <- dat %>%
-      dplyr::filter(gate != "ungated") %>%
-      tibble::column_to_rownames("cell.id") %>%
-      dplyr::select( -Time, -Event_length, -Bead_1, -DNA_1, -DNA_2, -Viability, -ld1, -ld2, -beadDist, -file) ## remove irrelevant markers - confirm with David
-    
-    subset_number <<- subset_number
-    
-  } else if (!is.null(subset_number)) { 
-    dat.clean <- dat %>%
-      dplyr::filter(gate != "ungated") %>%
-      tibble::column_to_rownames("cell.id") %>%
-      dplyr::select( -Time, -Event_length, -Bead_1, -DNA_1, -DNA_2, -Viability, -ld1, -ld2, -beadDist, -file) ## remove irrelevant markers - confirm with David
-    
-    subset_fraction <- round(subset_number/nrow(dat.clean), digits = 30)
-    subset_rows <- createDataPartition(dat.clean[ , "gate"], p =subset_fraction)
-    
-    dat.clean <- dat.clean[ subset_rows[[1]], ] 
-    subset_number <<- nrow(dat.clean)
-  }
   
-  write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
+  if (balanced_data == "unbalanced") { 
+  dat.clean <- data
+  dat.clean$labels <- factor(dat.clean$labels, levels = c(label.levels)) ## genereates factor variable for balanced subsetting
+  subset_fraction <- round(subset_number/nrow(dat.clean), digits = 30)
+  subset_rows <<- caret::createDataPartition(dat.clean[ , "labels"], p = subset_fraction, list =FALSE)
+  
+  dat.clean <- dat.clean[ subset_rows, ] 
+  # write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
   
   ## data characteristics and output
-  output_filename <- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary, "_")
+  output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
   data.input <- dat.clean %>%
-    dplyr::select("gate", all_of(features))
+    dplyr::select("labels", all_of(features))
+  
+  } else if (balanced_data == "balanced") {
+  dat.clean <- data
+  dat.clean$labels <- factor(dat.clean$labels, levels = c(label.levels)) ## genereates factor variable for balanced subsetting
+  subset_fraction <- round(subset_number/nrow(dat.clean), digits = 30)
+  subset_rows <<- caret::downSample(dat.clean, dat.clean$labels)[ , "cell.id"]
+  
+  dat.clean <- dat.clean[ subset_rows, ] 
+  # write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
+  
+  ## data characteristics and output
+  output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
+  data.input <- dat.clean %>%
+    dplyr::select("labels", all_of(features))
+  
+  }
   
   return(data.input)
 }
 
-
-
-## runS various clustering functions
-run_algorithms <- function(data.input = data.input) { 
+## runs various clustering functions
+## creates final tables from clustering function outputs
+generate_final_datatables <- function(algorithm_input) {
   
-  pca_function(data.input)
-  tsne_function(data.input)
-  phate_function(data.input, gamma.value = 0)
+  algorithm_input$cell.id <- as.vector(subset_rows) ## subset_rows is assigned as a gobal variable from the generate_subset function
+  algorithm_input <- algorithm_input %>%
+    mutate(cell.id = as.vector(subset_rows) ) %>%
+    left_join(., dplyr::select(dat_preproc, -labels), by = "cell.id") ## from main script function
   
-  ## umap parameter tuning
-  custom.config <- umap.defaults
-  custom.config$a <- 1.58
-  custom.config$b <- 2.5
-  umap_function(data.input, config = custom.config)
+  write.table(algorithm_input, algorithm_filename, sep=",",row.names = FALSE, col.names = TRUE) ## algorithm_filename is assigned as a global varialbe in each algorithm method
   
 }
 
 
+## runs various clustering functions and calls generate_final_datatables to generate final summary table
+run_algorithms <- function(data.input) { 
+  
+  pca_output <- pca_function(data.input)
+  generate_final_datatables(pca_output)
+  
+  tsne_outpit <- tsne_function(data.input)
+  generate_final_datatables(tsne_outpit)
+  
+  phate_output <- phate_function(data.input, gamma.value = 0)
+  generate_final_datatables(phate_output)
+  
+  umap_output <- umap_function(data.input, config = custom.config)
+  generate_final_datatables(umap_output)
+  
+}
+
+
+# generate_final_datatables <- function(data.files_subsetted, channels) {
+# 
+#   lapply(data.files_subsetted, function(cells_filepath) {
+#     algorithm_outputs <- list.files(dirname(cells_filepath), full.names = TRUE) %>%
+#       .[grepl(gsub(".*_|cells.*","", cells_filepath), .)] %>%
+#       .[grepl("processed", .) ] %>%
+#       .[grepl(".csv", .) ]
+# 
+#     # print(algorithm_outputs)
+#     cells_subset <- data.table::fread(cells_filepath) %>%
+#       rename(cell.id = x)
+#     print(cells_filepath)
+#     print(dim(cells_subset))
+# 
+#     lapply(algorithm_outputs, function(algorithm_file) {
+# 
+#       print(algorithm_file)
+#       processed_data <- data.table::fread(algorithm_file) %>%
+#       bind_cols(., cells_subset) %>%
+#         left_join(., dat.channels, by = "cell.id")
+# 
+#       write.table(processed_data, paste0("SCMP/data/analysis-ready/final-methods-tables/", basename(algorithm_file)), sep=",",row.names = FALSE, col.names = TRUE)
+#     })
+#   })
+# 
+#     processed_data <- data.table::fread(algorithm_file) %>%
+#       bind_cols(., )
+# 
+# 
+#   subsetted_cells <- data.table::fread(cells_filepath)
+# 
+#   algorithm_outputs <- list.files(basename(cells_filepath), full.names = TRUE) %>%
+#     .[grepl(gsub(".*_|-cells.*","",.))]
+# 
+#   lapply(algorithm_outputs, function(algorithm_file) {
+#     processed_data <- data.table::fread(algorithm_file) %>%
+#       bind_cols(., )
+# 
+# 
+#   })
+# }
+  
+  
 
 
 

@@ -1,12 +1,5 @@
-#' Master script that Runs various dimensionality reduction or clustering methods on the inputted data and outputs the data.
-#' Functions are edited in: 00-feature-gen-functions.R
-#' Input variables are edited in: 01-generate-features.R 
-#' 01-generate-features.R requires the following inputs:
-#' 
-#' Requires cell-types to be specified by a column named "gate"
-#' Requires a filepath to save outputs
-#' Requires a # to subset the data on
-#' Requires you to provide a name for the features included in this analysis
+#' Script that performs hyperparameter tuning for a given method
+#' Currently just tunes UMAP parameters
 rm(list = ls())
 library(tidyverse)
 library(factoextra)
@@ -38,46 +31,45 @@ cat("reading global variables")
 dat <- data.table::fread("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/processed_LDaxes.csv", sep = ",", stringsAsFactors = FALSE)
 dat[ , "cell.id"] <- 1:nrow(dat)
 
-## rename label of interest
-dat$labels <- dat$gate 
-dat$gate <- NULL
-
 output_filepath <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/" ## output directory 
+
 # subset_number <- 500 ## # of cells (rows) to include in analysis
 features <- c("WGA_106", "beta_actin", "HP1b", "rRNA", "lamin_A_C", "lamin_B",
               "lysozyme","VAMP_7", "lactoferrin", "MPO", "serpin_B1", "CD45")
 features_summary <- "LDA-scatterbodies"
-label.levels <- c("lymphocyte", "neutrophil", "monocyte", "erythroid", "blast" )
-balanced_data <- "unbalanced"
+
 ##########
 ## MAIN ##
 ##########
+
 ## functions
 subset_numbers <- c(1000, 5000, 10000, 50000, 100000, 176664 )
 use_previously_subsetted_data <- FALSE ## TRUE : use subsetted data (a training set) previously produced, FALSE : generates new subset of data
-data.files_subsetted <- list.files(output_filepath, full.names = TRUE) 
+data.files_subsetted <- list.files(output_filepath, full.names = TRUE) %>%
+  .[grepl("2020-09-21", . )]
 
 lapply(subset_numbers, function(subset_number) { 
   subset_number <<- subset_number ## assign to global environment to pass to other functions easily
   
   if (use_previously_subsetted_data == TRUE ) { 
-    data.subset.filepath <- data.files_subsetted[grepl(paste0(subset_number,"-"), data.files_subsetted)]
+    
+    data.subset.filepath <- data.files_subsetted[grepl(subset_number, data.files_subsetted)]
     data.subset.reference <- data.table::fread(data.subset.filepath, sep = ",", stringsAsFactors = FALSE)
     
-    dat_preproc <- dat %>%
+    data.input <- dat %>%
       dplyr::filter(cell.id %in% data.subset.reference[[1]]) %>%
-      dplyr::select("labels", "cell.id", all_of(features)) %>%
-      dplyr::filter(labels != "ungated")
+      column_to_rownames("cell.id") %>%
+      dplyr::select("gate", all_of(features))
+    
   } else { 
-    dat_preproc <-  dat %>%
-      dplyr::select("labels", "cell.id", all_of(features)) %>%
-      dplyr::filter(labels != "ungated")
-  }
+    data.input <- generate_subset(dat = dat, subset_number = subset_number, features = features, features_summary = features_summary, output_filepath=output_filepath)
+    }
   
-  data.input <- generate_subset(data = dat_preproc, label.levels = label.levels,balanced_data = "unbalanced", subset_number = subset_number, features = features, features_summary = features_summary, output_filepath=output_filepath)
   
-  run_algorithms(data.input = data.input)
+  # run_algorithms(data.input = data.input)
   })
+
+
 
 
 
