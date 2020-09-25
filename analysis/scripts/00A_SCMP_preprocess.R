@@ -45,8 +45,7 @@
 
 ### Path to folder containing fcs files
 path <- "/Users/mamouzgar/phd-projects/SCMP/FlowRepository_FR-FCM-Z2DX_files/"
-
-
+output_path <- paste0("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/processed_", subset_number, "-cells_LDA-scatterbodies", balanced_data, "_lda.csv")
 
 ###### LIBRARIES ######
 
@@ -58,10 +57,11 @@ require(data.table)
 
 ##### METADATA #####
 
-files <- paste0(c("all-cells-9878",
+files <- paste0(c(
+  "all-cells-9878",
               "all-cells-10874",
               "AML-4Cn5",
-              "AML-APL-1An7", 
+              "AML-APL-1An7",
               "AMML-1An6",
               "B-ALL-4Cr9",
               "MDS-EB2-1Ar1",
@@ -78,7 +78,8 @@ files <- paste0(c("all-cells-9878",
               "training_MM_all-cells-10874_monocytes",
               "training_MM_all-cells-10874_neutrophils",
               "training_MM_all-cells-10874_T_and_NK_cells"), ".fcs")
-gates <- c(rep("ungated", 13), c("lymphocyte", "blast", "erythroid", "lymphocyte", "monocyte", "neutrophil", "lymphocyte"))
+# gates <- c(rep("ungated", 13), c("lymphocyte", "blast", "erythroid", "lymphocyte", "monocyte", "neutrophil", "lymphocyte"))
+gates <- c("lymphocyte", "blast", "erythroid", "lymphocyte", "monocyte", "neutrophil", "lymphocyte")
 meta.dat <- data.table(file=files, gate=gates)
 factors <- c("file", "gate")
 rm(files, gates)
@@ -154,7 +155,7 @@ scaleData <- function(dt, exceptions=c(factors, "ld1", "ld2"), ref="all-cells-98
 }
 
 
-processData <- function(csv, mp=paste0(path, "processed_mm.csv")) {
+processData <- function(csv, mp=output_path) {
   # Processes data for a dataset
   # Inputs:
   #   csv - logical, true if csv should be written
@@ -165,7 +166,7 @@ processData <- function(csv, mp=paste0(path, "processed_mm.csv")) {
     combineFiles() %>%
     asinTransform() %>%
     scaleData()
-  if (csv) fwrite(dt, mp)
+  # if (csv) fwrite(dt, mp)
   return(dt)
 }
 

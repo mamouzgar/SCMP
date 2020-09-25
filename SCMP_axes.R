@@ -214,6 +214,7 @@ train.y <- dat[gate!="ungated", gate]
 coefficients <- hybridSubsetSelection(x=train.x, y=train.y)
 dat <- makeAxes()
 
-fwrite(dat, file = "/Users/mamouzgar/phd-projects/SCMP/data/processed_LDaxes.csv")
+output_path <- paste0("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/processed_", subset_number, "-cells_LDA-scatterbodies_", balanced_data, "_lda.csv")
+fwrite(dat, file = output_path)
 
 

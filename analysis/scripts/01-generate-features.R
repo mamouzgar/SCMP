@@ -84,7 +84,15 @@ lapply(subset_numbers, function(subset_number) {
 
 
 
-
+samples <- list.files("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready", full.names = TRUE) %>%
+  .[grepl("pca", .)]
+lapply(samples, function(filepath){ 
+  
+  filename<-gsub("*balanced.*", "balanced.csv", basename(filepath))
+  output_cellspath <- paste0("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/sampled-cells/", filename)
+  write.table(fread(filepath) %>%
+                .[,"cell.id"],output_cellspath, sep=",", row.names = FALSE, col.names = TRUE)
+  }) 
 
 
 

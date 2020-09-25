@@ -46,6 +46,7 @@
 
 # path to your processed csv file
 path <- "/Users/mamouzgar/phd-projects/SCMP/FlowRepository_FR-FCM-Z2DX_files/processed_mm.csv"
+
 # list of channels you want explored for dimensionality reduction
 channels <- c("WGA_106", "beta_actin", "HP1b", "rRNA", "lamin_A_C", "lamin_B",
               "lysozyme","VAMP_7", "lactoferrin", "MPO", "serpin_B1", "CD45")
@@ -203,17 +204,35 @@ makeAxes <- function(dt=dat, co=coefficients, axis.name="ld") {
 
 
 ##### MAIN #####
+dat.orig <- fread(path)
+dat.orig$cell.id <- 1:nrow(dat.orig)
+subsetted.cells_path<-list.files("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/sampled-cells", full.names = TRUE)
 
-dat <- fread(path)
+for (cell.ids_path in subsetted.cells_path) { 
+  print(cell.ids_path)
+  cell.ids <- fread(cell.ids_path)
+  
+  dat <- dat.orig[dat.orig$cell.id %in% cell.ids$cell.id]
+  rownames(dat) <- dat$cell.id
+  dat$cell.id <- NULL
+  # training data with appropriate channels
+  train.x <- dat[gate!="ungated", channels, with=F]
+  # training class labels - must be 3+ unique classes
+  train.y <- dat[gate!="ungated", gate]
+  
+  
+  coefficients <- hybridSubsetSelection(x=train.x, y=train.y)
+  dat.output <- makeAxes()
+  
+  dat.output$cell.id <- rownames(dat.output)
+  
+  filename<- gsub(".csv" , "_lda.csv",basename(cell.ids_path))
+  output_path <- paste0("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/",filename)
+  fwrite(dat.output, file = output_path)
+  
+}
 
-# training data with appropriate channels
-train.x <- dat[gate!="ungated", channels, with=F]
-# training class labels - must be 3+ unique classes
-train.y <- dat[gate!="ungated", gate]
 
-coefficients <- hybridSubsetSelection(x=train.x, y=train.y)
-dat <- makeAxes()
 
-fwrite(dat, file = "/Users/mamouzgar/phd-projects/SCMP/data/processed_LDaxes.csv")
 
 
