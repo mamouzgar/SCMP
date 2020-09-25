@@ -84,13 +84,16 @@ tsne_function <- function(input.data, pca.prior = FALSE, perplexity.value = NULL
 
 
 ## UMAP
-umap_function <- function(input.data, config = NULL )  {
+umap_function <- function(input.data, custom.config = NULL )  {
+  
   ## umap parameter tuning
+  if (is.null(custom.config)) { 
   custom.config <- umap.defaults
   custom.config$a <- 0.3
   custom.config$b <- 0.82
+  }
   
-  umap.model <- umap(dplyr::select(input.data, -labels), config = config)
+  umap.model <- umap(dplyr::select(input.data, -labels), config = custom.config)
   umap.data <- data.frame(umap.model$layout) %>%
     dplyr::mutate(labels = input.data[ , "labels"])
   
@@ -229,7 +232,7 @@ run_algorithms <- function(data.input) {
   phate_output <- phate_function(data.input, gamma.value = 0)
   generate_final_datatables(phate_output)
   
-  umap_output <- umap_function(data.input, config = custom.config)
+  umap_output <- umap_function(data.input)
   generate_final_datatables(umap_output)
   
 }
