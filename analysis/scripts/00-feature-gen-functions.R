@@ -31,7 +31,7 @@ set.seed(0)
 pca_function <- function(input.data) { 
   pca.model <- prcomp(dplyr::select(input.data, -labels), center = TRUE, scale = TRUE)
   pca.data <- data.frame(pca.model$x) %>%
-    dplyr::mutate(labels = input.data[ , "labels"])
+    dplyr::mutate(labels = input.data$labels)
   
   algorithm_filename <<-  paste0(output_filename, "pca.csv")
   write.table(pca.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
@@ -72,7 +72,7 @@ tsne_function <- function(input.data, pca.prior = FALSE, perplexity.value = NULL
                      pca = TRUE, pca_center = TRUE, pca_scale = TRUE, normalize = TRUE, 
                      theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
   tsne.data <- data.frame(tsne.model$Y) %>%
-    dplyr::mutate(labels = input.data[ , "labels"])
+    dplyr::mutate(labels = input.data$labels)
   
   algorithm_filename <<- paste0(output_filename, "tsne.csv")
   write.table(tsne.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
@@ -95,7 +95,7 @@ umap_function <- function(input.data, custom.config = NULL )  {
   
   umap.model <- umap(dplyr::select(input.data, -labels), config = custom.config)
   umap.data <- data.frame(umap.model$layout) %>%
-    dplyr::mutate(labels = input.data[ , "labels"])
+    dplyr::mutate(labels = input.data$labels)
   
   algorithm_filename <<- paste0(output_filename, "umap.csv")
   write.table(umap.data, algorithm_filename,sep = ",", row.names = FALSE, col.names = TRUE)
@@ -129,7 +129,7 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
   
   phate.model <- phate(dplyr::select(input.data, -labels), knn = knn.value, decay = decay.value, )
   phate.data <- data.frame(phate.model$embedding) %>%
-    dplyr::mutate(labels = input.data[ , "labels"])
+    dplyr::mutate(labels = input.data$labels)
   
   algorithm_filename <<- paste0(output_filename, "phate.csv")
   write.table(phate.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
@@ -174,6 +174,7 @@ generate_subset <- function(data, subset_number, label.levels = NULL, balanced_d
   ## generates NEW subset of data
   
   if (balanced_data == "unbalanced") { 
+    print("subsetting unbalanced data")
   dat.clean <- data
   dat.clean$labels <- factor(dat.clean$labels, levels = c(label.levels)) ## genereates factor variable for balanced subsetting
   subset_fraction <- round(subset_number/nrow(dat.clean), digits = 30)
@@ -188,17 +189,17 @@ generate_subset <- function(data, subset_number, label.levels = NULL, balanced_d
     dplyr::select("labels", all_of(features))
   
   } else if (balanced_data == "balanced") {
+    print("subsetting balanced data")
   dat.clean <- data
   dat.clean$labels <- factor(dat.clean$labels, levels = c(label.levels)) ## genereates factor variable for balanced subsetting
-  subset_fraction <- round(subset_number/nrow(dat.clean), digits = 30)
-  subset_rows <<- caret::downSample(dat.clean, dat.clean$labels)[ , "cell.id"]
-  
-  dat.clean <- dat.clean[ subset_rows, ] 
+  dat.clean <- dat.clean %>% dplyr::group_by(labels) %>% dplyr::sample_n(subset_number)
+  subset_rows <<- dat.clean$cell.id
   # write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
   
   ## data characteristics and output
   output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
   data.input <- dat.clean %>%
+    ungroup() %>%
     dplyr::select("labels", all_of(features))
   
   }

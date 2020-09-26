@@ -210,7 +210,7 @@ subsetted.cells_path<-list.files("/Users/mamouzgar/phd-projects/SCMP/data/analys
 
 for (cell.ids_path in subsetted.cells_path) { 
   print(cell.ids_path)
-  cell.ids <- fread(cell.ids_path)
+  cell.ids <- data.table::fread(cell.ids_path)
   
   dat <- dat.orig[dat.orig$cell.id %in% cell.ids$cell.id]
   rownames(dat) <- dat$cell.id

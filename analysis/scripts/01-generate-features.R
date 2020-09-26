@@ -49,12 +49,14 @@ features <- c("WGA_106", "beta_actin", "HP1b", "rRNA", "lamin_A_C", "lamin_B",
 features_summary <- "LDA-scatterbodies"
 label.levels <- c("lymphocyte", "neutrophil", "monocyte", "erythroid", "blast" )
 balanced_data <- "unbalanced" ## options are: "balanced" or "unbalanced" 
+balanced_data <- "balanced" ## options are: "balanced" or "unbalanced" 
+
 ##########
 ## MAIN ##
 ##########
 ## functions
 subset_numbers <- c(1000, 5000, 10000, 50000, 100000, 176664 ) ## for unbalanced data
-# subset_numbers <- c(100, 200, 300, 400, 548) ## for balanced data, limiter is blast cells
+subset_numbers <- c(100, 200, 300, 400, 548) ## for balanced data, limiter is blast cells
 
 use_previously_subsetted_data <- FALSE ## TRUE : use subsetted data (a training set) previously produced, FALSE : generates new subset of data
 data.files_subsetted <- list.files(output_filepath, full.names = TRUE) 
@@ -90,7 +92,7 @@ lapply(samples, function(filepath){
   
   filename<-gsub("*balanced.*", "balanced.csv", basename(filepath))
   output_cellspath <- paste0("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/sampled-cells/", filename)
-  write.table(fread(filepath) %>%
+  write.table(data.table::fread(filepath) %>%
                 .[,"cell.id"],output_cellspath, sep=",", row.names = FALSE, col.names = TRUE)
   }) 
 
