@@ -204,7 +204,7 @@ makeAxes <- function(dt=dat, co=coefficients, axis.name="ld") {
 
 
 ##### MAIN #####
-dat.orig <- fread(path)
+dat.orig <- data.table::fread(path)
 dat.orig$cell.id <- 1:nrow(dat.orig)
 subsetted.cells_path<-list.files("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/sampled-cells", full.names = TRUE)
 

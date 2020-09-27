@@ -93,38 +93,42 @@ accuracy_summary <- function(input.data) {
     dplyr::rename(positive=`TRUE`, negative=`FALSE`) %>%
     dplyr::group_by(labels) %>%
     dplyr::mutate(accuracy = positive/(positive+negative)) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(final.accuracy = sum(positive)/(sum(negative)+sum(positive)))
-
+    dplyr::ungroup() 
+  
+  summary.accuracy <- with(accuracy.table, 
+                           data.frame(labels = "all.cells", 
+                                      negative = sum(negative),
+                                      positive=sum(positive)))
+  summary.accuracy$accuracy = with(summary.accuracy, positive/(positive+negative))
+  
+  accuracy.table <- rbind(accuracy.table, summary.accuracy)
+  
   return(accuracy.table)
   }
 
 
 
-ggpubr::ggscatter(kmdoids.data %>% group_by(labels) %>% gather(key = "method", value = "group", -cell.id,-axis1,-axis2), x = "axis1", y ="axis2", facet.by = "method",color = "group")
+# ggpubr::ggscatter(kmdoids.data %>% group_by(labels) %>% gather(key = "method", value = "group", -cell.id,-axis1,-axis2), x = "axis1", y ="axis2", facet.by = "method",color = "group")
 
 
 ########################
 ## prepare data model ##
 ########################
-#######################################################
-## store response variables (categorical) ##
-response_var <- "treatment.group"
-response_levels <- c("N+A", "A-only") ## TP , TN
-# response_var <- "treatment"
-# response_levels <- c("neoadjuvant", "adjuvant") ## TP , TN
-#######################################################
-
 data.sets <- list.files("SCMP/data/analysis-ready", full.names = TRUE) %>% .[grepl("scatterbodies", .)]
 lapply(data.sets, function(filepath) { 
   extract_plot_columns(filepath)})
 
-kmed.input.files <- list.files("SCMP/data/analysis-ready/unsupervised-analysis-ready", full.names = TRUE) 
+kmed.input.files <- list.files("SCMP/data/analysis-ready/unsupervised-analysis-ready", full.names = TRUE) %>%
+  .[grepl("100-|200-|300-|400-|500-|548-|1000-|5000-|10000-",.)]
 
-accuracy.outputs <- lapply(kmed.input.files[1:5], function(filepath) {
+# kmed.input.files <- list.files("SCMP/data/analysis-ready/unsupervised-analysis-ready", full.names = TRUE) %>%
+#   .[grepl("548-",.)]
+accuracy.outputs <- lapply(kmed.input.files, function(filepath) {
   print(filepath)
   input.data <- data.table::fread(filepath)
   kmedoids_output<-kmedoids_function(input.data, k = 5, dist.method = "euclidean")
+  
+  write.table(kmedoids_output, filepath, sep = ",",row.names=FALSE, col.names = TRUE )
   final_results <- accuracy_summary(kmedoids_output)
   final_results$file <- basename(filepath)
   final_results$method = gsub(".*_|.csv","",final_results$file)
@@ -133,7 +137,6 @@ accuracy.outputs <- lapply(kmed.input.files[1:5], function(filepath) {
   
   return(final_results)
 })
-
 
 df.accuracy.output <- do.call("bind_rows",accuracy.outputs)
 write.table(df.accuracy.output, "SCMP/data/summary-tables/k-medoid-accuracy-results.csv",sep=",",row.names=FALSE, col.names = TRUE)
