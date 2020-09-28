@@ -70,3 +70,12 @@ dev.off()
 
 
 
+dat_class_summary <- dat_preproc %>%
+  group_by(labels) %>%
+  summarize(count = n()) %>%
+  bind_rows(., data.frame(labels="all.cells", count=sum(.$count))) %>%
+  mutate(labels = factor(labels, levels = c("all.cells","erythroid", "lymphocyte","blast","monocyte", "neutrophil")))
+ggbarplot(dat_class_summary, x = "labels", y = "count", label = "count", color = "labels", fill = "labels")
+
+
+
