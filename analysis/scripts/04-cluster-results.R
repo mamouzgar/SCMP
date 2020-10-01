@@ -12,6 +12,8 @@ k.medoid.results <- data.table::fread("SCMP/data/summary-tables/k-medoid-accurac
 
 
 
+tes <- k.medoid.results %>% filter(labels!="all.cells" ) %>% mutate(count = negative+positive) %>% group_by(file,labels) %>% summarize(count = sum(count))
+ggbarplot(tes, x = "labels", y=  "count", facet.by = "file", scales = "free_y")
 
 ggbarplot(filter(k.medoid.results, balance == "unbalanced", accuracy != 0 ) , 
           x = "labels", y = "accuracy", facet.by = c("cell.count","method")) + 
@@ -75,7 +77,10 @@ dat_class_summary <- dat_preproc %>%
   summarize(count = n()) %>%
   bind_rows(., data.frame(labels="all.cells", count=sum(.$count))) %>%
   mutate(labels = factor(labels, levels = c("all.cells","erythroid", "lymphocyte","blast","monocyte", "neutrophil")))
-ggbarplot(dat_class_summary, x = "labels", y = "count", label = "count", color = "labels", fill = "labels")
 
+pdf(paste0(plot.output.path, "barplot_cell-type_summary.pdf"), height = 3, width = 5)
+ggbarplot(dat_class_summary, x = "labels", y = "count", label = "count", color = "labels", fill = "labels") + 
+  coord_flip()
+dev.off()
 
 

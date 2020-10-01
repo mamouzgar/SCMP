@@ -72,9 +72,9 @@ extract_plot_columns <- function(filepath) {
 ## run k-mediods clustering
 ## input data, k : # of clusters
 ## dist.method : calcualte distance matrix using XXX method (default euclidean)
-kmedoids_function <- function(input.data, k = 5, dist.method = "euclidean") { 
+kmedoids_function <- function(input.data, k = 5, dist.method = "euclidean", k.method = "PAM") { 
   dist.object <- dist(input.data[ , c("axis1","axis2")], method = dist.method)
-  kmedoids.model <-WeightedCluster::wcKMedoids(as.matrix(dist.object), k=k, method = "KMedoids")
+  kmedoids.model <-WeightedCluster::wcKMedoids(as.matrix(dist.object), k=k, method = k.method)
   kmedoids.data <- data.frame(cbind(input.data, k.med.cluster = kmedoids.model$clustering), k.med.id = 1:length(kmedoids.model$clustering))
   kmedoids.results <- data.frame(cbind(k.med.id=as.numeric(rownames(kmedoids.model$ASW)))) %>%
     left_join(.,kmedoids.data, by = "k.med.id") %>%

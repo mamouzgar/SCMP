@@ -20,7 +20,7 @@ library(phateR)
 
 setwd("/Users/mamouzgar/phd-projects")
 source("SCMP/analysis/scripts/00-feature-gen-functions.R") 
-set.seed(0)
+# set.seed(0)
 
 
 ##########
@@ -43,25 +43,26 @@ dat$labels <- dat$gate
 dat$gate <- NULL
 
 output_filepath <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/" ## output directory 
-# subset_number <- 500 ## # of cells (rows) to include in analysis
-features <- c("WGA_106", "beta_actin", "HP1b", "rRNA", "lamin_A_C", "lamin_B",
-              "lysozyme","VAMP_7", "lactoferrin", "MPO", "serpin_B1", "CD45")
+features <- c("WGA_106", "beta_actin", "HP1b", "rRNA", "lamin_A_C", "lamin_B", "lysozyme","VAMP_7", "lactoferrin", "MPO", "serpin_B1", "CD45")
 features_summary <- "LDA-scatterbodies"
 label.levels <- c("lymphocyte", "neutrophil", "monocyte", "erythroid", "blast" )
-balanced_data <- "unbalanced" ## options are: "balanced" or "unbalanced" 
-balanced_data <- "balanced" ## options are: "balanced" or "unbalanced" 
 
+# table(dat %>% group_by(labels) %>% dplyr:::sample_n(size = 5) %>% .$labels)
 ##########
 ## MAIN ##
 ##########
-## functions
-subset_numbers <- c(1000, 5000, 10000, 50000, 100000, 176664 ) ## for unbalanced data
-subset_numbers <- c(100, 200, 300, 400, 548) ## for balanced data, limiter is blast cells
+
+balanced_data <- "unbalanced_minimum" ## options are: "balanced" or "unbalanced" or "unbalanced_minimum" you can specify the minimum count
+subset_numbers <- c(1000, 5000, 10000, 15000, 20000,50000, 100000, 176664 ) ## for unbalanced or unbalanced_minimum data
+
+# balanced_data <- "balanced" ## options are: "balanced" or "unbalanced"
+# subset_numbers <- c(100, 200, 300, 400, 548) ## for balanced data, limiter is blast cells
 
 use_previously_subsetted_data <- FALSE ## TRUE : use subsetted data (a training set) previously produced, FALSE : generates new subset of data
 data.files_subsetted <- list.files(output_filepath, full.names = TRUE) 
 
 lapply(subset_numbers, function(subset_number) { 
+  print(subset_number)
   subset_number <<- subset_number ## assign to global environment to pass to other functions easily
   
   if (use_previously_subsetted_data == TRUE ) { 
@@ -85,7 +86,7 @@ lapply(subset_numbers, function(subset_number) {
 
 
 
-
+## get list of sampled cells used in the analysis
 samples <- list.files("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready", full.names = TRUE) %>%
   .[grepl("pca", .)]
 lapply(samples, function(filepath){ 

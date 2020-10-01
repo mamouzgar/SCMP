@@ -13,7 +13,7 @@
 # library(umap)
 # library(phateR)
 # library(diffusionMap)
-set.seed(0)
+# set.seed(0)
 ##################################
 ##################################
 ##################################
@@ -29,9 +29,10 @@ set.seed(0)
 ## PCA
 ## data is centered and scaled
 pca_function <- function(input.data) { 
-  pca.model <- prcomp(dplyr::select(input.data, -labels), center = TRUE, scale = TRUE)
+  pca.model <- prcomp(dplyr::select(input.data, -labels, -cell.id), center = TRUE, scale = TRUE)
   pca.data <- data.frame(pca.model$x) %>%
-    dplyr::mutate(labels = input.data$labels)
+    dplyr::mutate(labels = input.data$labels,
+                  cell.id = input.data$cell.id)
   
   algorithm_filename <<-  paste0(output_filename, "pca.csv")
   write.table(pca.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
@@ -56,12 +57,12 @@ tsne_function <- function(input.data, pca.prior = FALSE, perplexity.value = NULL
   }
   
   if (pca.prior == FALSE) { 
-    tsne.model <- Rtsne(dplyr::select(input.data, -labels), dims=2, 
+    tsne.model <- Rtsne(dplyr::select(input.data, -labels, -cell.id), dims=2, 
                         perplexity= perplexity.value , 
                         pca = FALSE, pca_center = FALSE, pca_scale = TRUE, normalize = TRUE, 
                         theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
   } else if (pca.prior == TRUE) { 
-    tsne.model <- Rtsne(dplyr::select(input.data, -labels), dims=2, 
+    tsne.model <- Rtsne(dplyr::select(input.data, -labels, -cell.id), dims=2, 
                         perplexity= perplexity.value , 
                         pca = TRUE, pca_center = TRUE, pca_scale = TRUE, normalize = TRUE, 
                         theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
@@ -72,7 +73,8 @@ tsne_function <- function(input.data, pca.prior = FALSE, perplexity.value = NULL
                      pca = TRUE, pca_center = TRUE, pca_scale = TRUE, normalize = TRUE, 
                      theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
   tsne.data <- data.frame(tsne.model$Y) %>%
-    dplyr::mutate(labels = input.data$labels)
+    dplyr::mutate(labels = input.data$labels,
+                  cell.id = input.data$cell.id)
   
   algorithm_filename <<- paste0(output_filename, "tsne.csv")
   write.table(tsne.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
@@ -93,9 +95,10 @@ umap_function <- function(input.data, custom.config = NULL )  {
   custom.config$b <- 0.82
   }
   
-  umap.model <- umap(dplyr::select(input.data, -labels), config = custom.config)
+  umap.model <- umap(dplyr::select(input.data, -labels, -cell.id), config = custom.config)
   umap.data <- data.frame(umap.model$layout) %>%
-    dplyr::mutate(labels = input.data$labels)
+    dplyr::mutate(labels = input.data$labels,
+                  cell.id = input.data$cell.id)
   
   algorithm_filename <<- paste0(output_filename, "umap.csv")
   write.table(umap.data, algorithm_filename,sep = ",", row.names = FALSE, col.names = TRUE)
@@ -127,9 +130,10 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
   } 
   
   
-  phate.model <- phate(dplyr::select(input.data, -labels), knn = knn.value, decay = decay.value, )
+  phate.model <- phate(dplyr::select(input.data, -labels, -cell.id), knn = knn.value, decay = decay.value, )
   phate.data <- data.frame(phate.model$embedding) %>%
-    dplyr::mutate(labels = input.data$labels)
+    dplyr::mutate(labels = input.data$labels,
+                  cell.id = input.data$cell.id)
   
   algorithm_filename <<- paste0(output_filename, "phate.csv")
   write.table(phate.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
@@ -144,16 +148,16 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
 # Uses the pair-wise distance matrix for a data set to compute the diffusion map coefficients.
 # Computes the Markov transition probability matrix, and its eigenvalues and left & right eigenvectors.
 # dmap_function <- function(input.data)  {
-#   
-#   dists.data <- dist(dplyr::select(input.data, -labels),) ## compute pairwise distance matrix
-#   
+# 
+#   dists.data <- dist(dplyr::select(input.data, -labels)) ## compute pairwise distance matrix
+# 
 #   dmap.model <- diffuse(dists.data)
 #   dmap.data <- data.frame(dmap.model$layout) %>%
 #     dplyr::mutate(labels = input.data[ , "labels"])
-#   
+# 
 #   write.table(dmap.data, paste0(output_filename, "umap.csv"),sep = ",", row.names = FALSE, col.names = TRUE)
 # saveRDS(dmap.model, paste0(output_filename, "dmap.RDS"))
-
+# 
 #   return(dmap.data)
 # }
 #####################################################################################################################
@@ -163,13 +167,16 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
 ##########################################################
 ## DATA PRE-PROCESSING FUNCTIONS FOR CLUSTERING METHODS ##
 ##########################################################
-##
+
+
+
 ## generates the subset of data used for the clustering
 ## dat = dataset with the classification feature of interest column named as "label" 
 ## subset_number : # of cells to subset
+## can do balanced or unbalanced data...BUT if unbalanced, it won't preserve all labels so you can end up with no observations sampled for labels with few total cells 
 ## features : the channels  that are included in the run
 ## features_summary : a summary of the features (eg, "scatterbodies" or "CD-markers" )
-generate_subset <- function(data, subset_number, label.levels = NULL, balanced_data = "unbalanced", features, features_summary, output_filepath = output_filepath) { 
+generate_subset <- function(data, subset_number, label.levels = NULL, balanced_data = "unbalanced", unbalanced.min.count = 50, features, features_summary, output_filepath = output_filepath) { 
 
   ## generates NEW subset of data
   
@@ -180,13 +187,13 @@ generate_subset <- function(data, subset_number, label.levels = NULL, balanced_d
   subset_fraction <- round(subset_number/nrow(dat.clean), digits = 30)
   subset_rows <<- caret::createDataPartition(dat.clean[ , "labels"], p = subset_fraction, list =FALSE)
   
-  dat.clean <- dat.clean[ subset_rows, ] 
+  dat.clean <- dat.clean[ dat.clean$cell.id %in% subset_rows, ] 
   # write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
   
   ## data characteristics and output
   output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
   data.input <- dat.clean %>%
-    dplyr::select("labels", all_of(features))
+    dplyr::select("labels", cell.id, all_of(features))
   
   } else if (balanced_data == "balanced") {
     print("subsetting balanced data")
@@ -198,10 +205,39 @@ generate_subset <- function(data, subset_number, label.levels = NULL, balanced_d
   
   ## data characteristics and output
   output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
+  
   data.input <- dat.clean %>%
     ungroup() %>%
-    dplyr::select("labels", all_of(features))
+    dplyr::select("labels", cell.id, all_of(features))
   
+  } else if (balanced_data == "unbalanced_minimum") { ## subsets samples while maintaining distribution but extracts a MINIMUM # of cells for each cell first
+    print("subsetting unbalanced data with a minimum # of cells")
+    cat(unbalanced.min.count)
+    
+    
+    try(if(subset_number < (unbalanced.min.count*length(unique(data$label)) )) stop("total requested subset of observations is smaller than the minimum # of observaations required for each class label"))
+    
+    remaining.subset_number = subset_number - (unbalanced.min.count*length(unique(data$label)) )
+    
+    dat.clean <- data
+    dat.clean$labels <- factor(dat.clean$labels, levels = c(label.levels)) ## genereates factor variable for balanced subsetting
+    
+    ## get minimum cells first then anti_join with original data
+    dat.clean <- dat.clean %>% dplyr::group_by(labels) %>% dplyr::sample_n(unbalanced.min.count) %>% ## select minimum cells first
+      assign("df.min.subset",.,envir = .GlobalEnv)  %>% ## save minimum subsetted table 
+      anti_join(dat.clean, ., by = "cell.id" ) 
+    
+    ## extract remaining cells  from new dataframe not containing the minimum cells
+    subset_fraction <- round(remaining.subset_number/nrow(dat.clean), digits = 30)
+    subset_rows <<- caret::createDataPartition(dat.clean[ , "labels"], p = subset_fraction, list =FALSE)
+    dat.clean <- dat.clean[ dat.clean$cell.id %in% subset_rows, ] %>%
+      bind_rows(., df.min.subset)
+    # write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
+    ## data characteristics and output
+    output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
+    data.input <- dat.clean %>%
+      dplyr::select("labels", cell.id ,all_of(features))
+    
   }
   
   return(data.input)
@@ -211,9 +247,8 @@ generate_subset <- function(data, subset_number, label.levels = NULL, balanced_d
 ## creates final tables from clustering function outputs
 generate_final_datatables <- function(algorithm_input) {
   
-  algorithm_input$cell.id <- as.vector(subset_rows) ## subset_rows is assigned as a gobal variable from the generate_subset function
+  # algorithm_input$cell.id <- as.vector(subset_rows) ## subset_rows is assigned as a gobal variable from the generate_subset function
   algorithm_input <- algorithm_input %>%
-    mutate(cell.id = as.vector(subset_rows) ) %>%
     left_join(., dplyr::select(dat_preproc, -labels), by = "cell.id") ## from main script function
   
   write.table(algorithm_input, algorithm_filename, sep=",",row.names = FALSE, col.names = TRUE) ## algorithm_filename is assigned as a global varialbe in each algorithm method
@@ -227,8 +262,8 @@ run_algorithms <- function(data.input) {
   pca_output <- pca_function(data.input)
   generate_final_datatables(pca_output)
   
-  tsne_outpit <- tsne_function(data.input)
-  generate_final_datatables(tsne_outpit)
+  tsne_output <- tsne_function(data.input)
+  generate_final_datatables(tsne_output)
   
   phate_output <- phate_function(data.input, gamma.value = 0)
   generate_final_datatables(phate_output)
