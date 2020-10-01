@@ -54,3 +54,9 @@ lapply(analysis.ready.tables, function(filepath) {
   print(filepath)
   calculate_mahalanobis_dist(filepath)  
   }) 
+
+
+
+
+
+
