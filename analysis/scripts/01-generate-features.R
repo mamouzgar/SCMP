@@ -91,7 +91,8 @@ samples <- list.files("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready", 
   .[grepl("pca", .)]
 lapply(samples, function(filepath){ 
   
-  filename<-gsub("*balanced.*", "balanced.csv", basename(filepath))
+  # filename<<-gsub("*balanced.*", "balanced.csv", basename(filepath))
+  filename<<-gsub("_pca","", basename(filepath))
   output_cellspath <- paste0("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/sampled-cells/", filename)
   write.table(data.table::fread(filepath) %>%
                 .[,"cell.id"],output_cellspath, sep=",", row.names = FALSE, col.names = TRUE)

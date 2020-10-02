@@ -226,7 +226,7 @@ for (cell.ids_path in subsetted.cells_path) {
   
   dat.output$cell.id <- rownames(dat.output)
   
-  filename<- gsub(".csv" , "_lda.csv",basename(cell.ids_path))
+  filename<- gsub("balanced_.*.csv" , "_lda.csv",basename(cell.ids_path))
   output_path <- paste0("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/",filename)
   fwrite(dat.output, file = output_path)
   
