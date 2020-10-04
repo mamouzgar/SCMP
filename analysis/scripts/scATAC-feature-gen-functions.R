@@ -67,12 +67,12 @@ tsne_function <- function(input.data, pca.prior = FALSE, perplexity.value = NULL
                         perplexity= perplexity.value , 
                         pca = TRUE, pca_center = TRUE, pca_scale = TRUE, normalize = TRUE, 
                         theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
-    }
+  }
   
   tsne.model <- Rtsne(dplyr::select(input.data, -labels), dims=2, 
-                     perplexity= perplexity.value , 
-                     pca = TRUE, pca_center = TRUE, pca_scale = TRUE, normalize = TRUE, 
-                     theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
+                      perplexity= perplexity.value , 
+                      pca = TRUE, pca_center = TRUE, pca_scale = TRUE, normalize = TRUE, 
+                      theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
   tsne.data <- data.frame(tsne.model$Y) %>%
     dplyr::mutate(labels = input.data$labels,
                   cell.id = input.data$cell.id)
@@ -91,9 +91,9 @@ umap_function <- function(input.data, custom.config = NULL )  {
   
   ## umap parameter tuning
   if (is.null(custom.config)) { 
-  custom.config <- umap.defaults
-  custom.config$a <- 0.3
-  custom.config$b <- 0.82
+    custom.config <- umap.defaults
+    custom.config$a <- 0.3
+    custom.config$b <- 0.82
   }
   
   umap.model <- umap(dplyr::select(input.data, -labels, -cell.id), config = custom.config)
@@ -109,28 +109,13 @@ umap_function <- function(input.data, custom.config = NULL )  {
   return(umap.data)
 }
 
-uwot_umap_function <- function(input.data, custom.config = NULL )  {
-
-  
-  umap.model <- uwot::umap(dplyr::select(input.data, -labels, -cell.id), pca = 50, pca_center = TRUE, scale = TRUE, metric = "manhattan")
-  umap.data <- data.frame(umap.model) %>%
-    dplyr::mutate(labels = input.data$labels,
-                  cell.id = input.data$cell.id)
-  
-  algorithm_filename <<- paste0(output_filename, "umap.csv")
-  write.table(umap.data, algorithm_filename,sep = ",", row.names = FALSE, col.names = TRUE)
-  saveRDS(umap.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "umap.RDS"))
-  
-  print("umap is complete")
-  return(umap.data)
-}
 
 
 ## PHATE
 ## knn is selected using k=sqrt(n) unless otherwise stated
 ## if a decay.value is supplied, it uses alpha for estimating graph connectivity instead of knn
 ## gamma is an informational distance metric is defaulted to 1. Change to 0 (or tune to another #) if points are concentrated in one spot
-phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, gamma.value = NULL, npca = 50)  { 
+phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, gamma.value = NULL)  { 
   if(is.null(knn.value)) { 
     knn.value  <- round(sqrt(nrow(input.data)))
   }
@@ -193,39 +178,39 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
 ## features : the channels  that are included in the run
 ## features_summary : a summary of the features (eg, "scatterbodies" or "CD-markers" )
 generate_subset <- function(data, subset_number, label.levels = NULL, balanced_data = "unbalanced", unbalanced.min.count = 50, features, features_summary, output_filepath = output_filepath) { 
-
+  
   ## generates NEW subset of data
   
   if (balanced_data == "unbalanced") { 
     print("subsetting unbalanced data")
-  dat.clean <- data
-  dat.clean$labels <- factor(dat.clean$labels, levels = c(label.levels)) ## genereates factor variable for balanced subsetting
-  subset_fraction <- round(subset_number/nrow(dat.clean), digits = 30)
-  subset_rows <<- caret::createDataPartition(dat.clean[ , "labels"], p = subset_fraction, list =FALSE)
-  
-  dat.clean <- dat.clean[ dat.clean$cell.id %in% subset_rows, ] 
-  # write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
-  
-  ## data characteristics and output
-  output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
-  data.input <- dat.clean %>%
-    dplyr::select("labels", cell.id, all_of(features))
-  
+    dat.clean <- data
+    dat.clean$labels <- factor(dat.clean$labels, levels = c(label.levels)) ## genereates factor variable for balanced subsetting
+    subset_fraction <- round(subset_number/nrow(dat.clean), digits = 30)
+    subset_rows <<- caret::createDataPartition(dat.clean[ , "labels"], p = subset_fraction, list =FALSE)
+    
+    dat.clean <- dat.clean[ dat.clean$cell.id %in% subset_rows, ] 
+    # write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
+    
+    ## data characteristics and output
+    output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
+    data.input <- dat.clean %>%
+      dplyr::select("labels", cell.id, all_of(features))
+    
   } else if (balanced_data == "balanced") {
     print("subsetting balanced data")
-  dat.clean <- data
-  dat.clean$labels <- factor(dat.clean$labels, levels = c(label.levels)) ## genereates factor variable for balanced subsetting
-  dat.clean <- dat.clean %>% dplyr::group_by(labels) %>% dplyr::sample_n(subset_number)
-  subset_rows <<- dat.clean$cell.id
-  # write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
-  
-  ## data characteristics and output
-  output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
-  
-  data.input <- dat.clean %>%
-    ungroup() %>%
-    dplyr::select("labels", cell.id, all_of(features))
-  
+    dat.clean <- data
+    dat.clean$labels <- factor(dat.clean$labels, levels = c(label.levels)) ## genereates factor variable for balanced subsetting
+    dat.clean <- dat.clean %>% dplyr::group_by(labels) %>% dplyr::sample_n(subset_number)
+    subset_rows <<- dat.clean$cell.id
+    # write.table(rownames(dat.clean), paste0(output_filepath, Sys.Date(), "_analyzed-cells_", subset_number, "-cells.csv"), sep=",",row.names = FALSE, col.names = TRUE)
+    
+    ## data characteristics and output
+    output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
+    
+    data.input <- dat.clean %>%
+      ungroup() %>%
+      dplyr::select("labels", cell.id, all_of(features))
+    
   } else if (balanced_data == "unbalanced_minimum") { ## subsets samples while maintaining distribution but extracts a MINIMUM # of cells for each cell first
     print("subsetting unbalanced data with a minimum # of cells")
     cat(unbalanced.min.count)
@@ -278,7 +263,7 @@ run_algorithms <- function(data.input) {
   pca_output <- pca_function(data.input)
   generate_final_datatables(pca_output)
   
-  tsne_output <- tsne_function(data.input)
+  tsne_output <- tsne_function(data.input, pca.prior = TRUE)
   generate_final_datatables(tsne_output)
   
   phate_output <- phate_function(data.input, gamma.value = 0)
@@ -335,8 +320,8 @@ run_algorithms <- function(data.input) {
 # 
 #   })
 # }
-  
-  
+
+
 
 
 
