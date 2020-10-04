@@ -50,7 +50,7 @@ pca_function <- function(input.data) {
 ## perplexity is defaulted to 25 if arguement is not provided
 ## potential future added functionality: perplexity is defaulted to 5% of data size if arguement is not provided
 ## other features set to default 
-tsne_function <- function(input.data, pca.prior = FALSE, perplexity.value = NULL)  { 
+tsne_function <- function(input.data, pca.prior = FALSE, perplexity.value = NULL, initial_dims = 50)  { 
   if(is.null(perplexity.value)) { 
     # perplexity.value  <- nrow(input.data)*0.05
     perplexity.value  <- 25
@@ -63,6 +63,7 @@ tsne_function <- function(input.data, pca.prior = FALSE, perplexity.value = NULL
                         theta=0.5,  max_iter = 1000, check_duplicates = FALSE)
   } else if (pca.prior == TRUE) { 
     tsne.model <- Rtsne(dplyr::select(input.data, -labels, -cell.id), dims=2, 
+                        initial_dims = initial_dims,
                         perplexity= perplexity.value , 
                         pca = TRUE, pca_center = TRUE, pca_scale = TRUE, normalize = TRUE, 
                         theta=0.5,  max_iter = 1000, check_duplicates = FALSE)

@@ -2,6 +2,7 @@
 library(gridExtra)
 library(ggpubr)
 library(tidyverse)
+library(viridis)
 setwd("/Users/mamouzgar/phd-projects")
 
 #### function to calculate the distance from centroid for files outputted from the function "extract_plot_columns" in 03-cluster-analysis script.
@@ -206,10 +207,69 @@ mahalanobis_dist_plot <- mahalanobis_dist %>%
 
 ggscatter(dplyr::filter(mahalanobis_dist_plot, cell.count == 548, method == "lda", data_balance == "balanced"),
           x = "axis1", y = "axis2", 
-          color = "mahalanobis_dist",
-          facet.by = c("labels", "label.centroid")
-)
+          color = "mahalanobis_dist") +
+            geom_point() +
+  # facet_wrap(~labels + label.centroid, strip.position = "right") 
+  facet_grid(c("labels", "label.centroid"), 
+             labeller = "label_both")
 
+
+
+centroids.plot <- dplyr::filter(mahalanobis_dist_plot, cell.count == 548, method == "lda", data_balance == "balanced") %>%
+  distinct(axis1, axis2, cell.id, label.centroid= labels) %>%
+  group_by(label.centroid) %>%
+  summarize(x.centroid = mean(axis1),
+            y.centroid = mean(axis2))
+# centroids.plot$labels <- NULL
+
+pdf("SCMP/analysis/plots/distance-metrics/mahalanobis-dist/test.plot-548-balanced-cells-facetted.pdf", height =10,width=10)
+ggplot() +
+  geom_point(data = dplyr::select(dplyr::filter(mahalanobis_dist_plot, cell.count == 548, method == "lda", data_balance == "balanced"), -labels, -label.centroid, -mahalanobis_dist),
+             aes(x=axis1,y=axis2), color = "grey") +
+  geom_point(data = dplyr::filter(mahalanobis_dist_plot, cell.count == 548, method == "lda", data_balance == "balanced"),
+             aes(x=axis1,y=axis2, color = mahalanobis_dist )) +
+  scale_color_viridis() +
+  # facet_wrap(~labels", "label.centroid"))
+  facet_grid(c("labels", "label.centroid"),
+             labeller = "label_both") +
+  geom_point(data = centroids.plot, aes(x=x.centroid, y=y.centroid), color="red") +
+  theme_pubclean()
+# geom_point(aes(color = mahalanobis_dist)) +
+dev.off()
+
+pdf("SCMP/analysis/plots/distance-metrics/mahalanobis-dist/test.plot-548-balanced-cells.pdf", height =10,width=6)
+ggplot() +
+  geom_point(data = dplyr::select(dplyr::filter(mahalanobis_dist_plot, cell.count == 548, method == "lda", data_balance == "balanced"), -labels, -label.centroid, -mahalanobis_dist),
+             aes(x=axis1,y=axis2), color = "grey") +
+  geom_point(data = dplyr::filter(mahalanobis_dist_plot, cell.count == 548, method == "lda", data_balance == "balanced"),
+             aes(x=axis1,y=axis2, color = mahalanobis_dist )) +
+  scale_color_viridis() +
+  facet_grid(c("label.centroid"),
+             labeller = "label_both") +
+  geom_point(data = centroids.plot, aes(x=x.centroid, y=y.centroid), color="red") +
+  theme_pubclean()
+dev.off()  
+
+# ggboxplot(mahalanobis_dist_plot, x = "method",  y = "mahalanobis_dist", color = "cell.count",
+#           facet.by = c("label.centroid", "data_balance"), 
+#           yscale = "log2", scales = "free") 
+
+
+mahalanobis_dist_plot_summary <- mahalanobis_dist_plot %>%
+  group_by(data_balance, method, cell.count, label.centroid) %>%
+  summarize(mean.mahalanobis_dist = mean(mahalanobis_dist),
+            median.mahalanobis_dist = median(mahalanobis_dist),
+            sd.mahalanobis_dist = sd(mahalanobis_dist),
+            coef.of.var.mahalanobis_dist = sd.mahalanobis_dist/mean.mahalanobis_dist)
+
+pdf("SCMP/analysis/plots/distance-metrics/mahalanobis-dist/summary-mahalanobis.plot.pdf", height =8,width=6)
+ggline(mahalanobis_dist_plot_summary, x = "cell.count",  y = "mean.mahalanobis_dist", color = "method",
+          facet.by = c("label.centroid", "data_balance"), 
+          # yscale = "log2",
+       scales = "free_"
+       ) +
+  rotate_x_text(90)
+dev.off()
 ## all aggregated centroid data (very large data)
 ##### too much data, difficult to plot
 # centroid.dists <- data.table::fread("SCMP/data/summary-tables/dist-from-centroid_full-analysis.csv")
