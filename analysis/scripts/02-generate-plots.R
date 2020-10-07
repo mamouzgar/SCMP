@@ -21,7 +21,7 @@ density_2d_plot <- function(input.data, cluster.method = NULL, cell_counts = NUL
     geom_density_2d(aes(color = gate)) + 
     scale_color_brewer(palette = "Set1") +
     theme_pubr() + 
-    theme(legend.position = "none") +
+    theme(legend.position = "right") +
     ggtitle(paste(cluster.method, cell_counts,sep = "-")) + 
     theme(axis.title.x=element_blank(),
           axis.text.x=element_blank(),
@@ -58,14 +58,14 @@ sp_plot  <- function(input.data, cluster.method = NULL, cell_counts = NULL) {
 ## variables ##
 ###############
 result.files <- list.files("SCMP/data/analysis-ready", full.names = TRUE)
-result.files <- result.files[grepl("pca.csv|tsne.csv|umap.csv|phate.csv",result.files)]
+result.files <- result.files[grepl("pca.csv|tsne.csv|umap.csv|phate.csv|lda.csv",result.files)]
 # result.files <- result.files[!grepl("176664",result.files)]
 result.files 
 result.files <- data.frame(result.files, stringsAsFactors = FALSE) %>%
   dplyr::mutate(cell.counts = gsub(".*processed_|-cells.*", "", result.files),
                 cell.counts = as.numeric(cell.counts),
                 method = gsub(".*_|.csv", "", result.files),
-                method = factor(method, levels = c("pca","tsne","umap","phate"))) %>%
+                method = factor(method, levels = c("pca","tsne","umap","phate", "lda"))) %>%
   arrange(cell.counts, method)
 # pca.files <- result.files[grepl("pca.csv",result.files)]
 # tsne.files <- result.files[grepl("tsne.csv",result.files)]
@@ -79,10 +79,21 @@ plot.output.path <- "SCMP/analysis/plots/"
 ##########
 plots.list <- lapply(result.files$result.files, function(filepath) { 
   print(filepath)
-  df <- data.table::fread(filepath) %>%
-    mutate(gate = factor(gate, levels = c("monocyte","lymphocyte","erythroid","blast", "neutrophil")))
   
-  df <- df[, c(1,2, ncol(df))]
+  if ( grepl("lda", filepath)) { 
+    df <- data.table::fread(filepath) %>%
+      mutate(gate = factor(gate, levels = c("monocyte","lymphocyte","erythroid","blast", "neutrophil")))
+  } else { 
+    df <- data.table::fread(filepath) %>%
+      mutate(gate = factor(labels, levels = c("monocyte","lymphocyte","erythroid","blast", "neutrophil")))
+  }
+  
+  if ( grepl("lda", filepath)) { 
+    df <- df[, c("ld1", "ld2", "gate")]
+  } else { 
+    df <- df[, c(1,2, ncol(df))]
+  }
+  
   colnames(df) <- c("axis1","axis2","gate")
   
   if (grepl("phate", filepath) | any(table(df$gate) <= 1)) { 
@@ -98,8 +109,8 @@ plots.list <- lapply(result.files$result.files, function(filepath) {
 ###############
 library(gridExtra)
 # library(grid)
-pdf(paste0(plot.output.path, "plotting-figures.pdf"), height = 18, width = 18)
-do.call("grid.arrange", c(plots.list, ncol = 4))
+pdf(paste0(plot.output.path, "all-data-plotting-figures.pdf"), height = 25, width = 22)
+do.call("grid.arrange", c(plots.list, ncol = 5))
 dev.off()
   
   

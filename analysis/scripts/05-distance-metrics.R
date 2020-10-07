@@ -270,6 +270,67 @@ ggline(mahalanobis_dist_plot_summary, x = "cell.count",  y = "mean.mahalanobis_d
        ) +
   rotate_x_text(90)
 dev.off()
+
+
+
+
+##########################################################################
+## mahalanobis : average distance of each cell from all other centroids ##
+##########################################################################
+mahalanobis_dist = mahalanobis_dist %>% ungroup() %>% rowwise() %>% 
+  mutate(mean.mahalanobis=mean(blast + erythroid + lymphocyte + monocyte +neutrophil))
+mahalanobis_dist_plot <- mahalanobis_dist %>%
+  ungroup() %>%
+  dplyr::select(-filepath, -blast, -erythroid, -lymphocyte, -monocyte, -neutrophil ) %>%
+  gather(key = "metric" , value = "mean.mahalanobis", -axis1, -axis2, -cell.id, -labels, -cell.count,-method,-data_balance)
+
+ggplot() +
+  # geom_point(data = dplyr::select(dplyr::filter(mahalanobis_dist_plot, cell.count == 548, method == "lda", data_balance == "balanced"), -labels, -label.centroid, -mahalanobis_dist),
+  #            aes(x=axis1,y=axis2), color = "grey") +
+  geom_point(data = dplyr::filter(mahalanobis_dist_plot, data_balance == "balanced"),
+             aes(x=axis1,y=axis2, color = mean.mahalanobis )) +
+  scale_color_viridis() +
+  facet_grid(c("method", "cell.count"),
+             labeller = "label_both") +
+  # geom_point(data = centroids.plot, aes(x=x.centroid, y=y.centroid), color="red") +
+  theme_pubclean()
+
+ggplot() +
+  # geom_point(data = dplyr::select(dplyr::filter(mahalanobis_dist_plot, cell.count == 548, method == "lda", data_balance == "balanced"), -labels, -label.centroid, -mahalanobis_dist),
+  #            aes(x=axis1,y=axis2), color = "grey") +
+  geom_point(data = dplyr::filter(mahalanobis_dist_plot, data_balance == "balanced"),
+             aes(x=axis1,y=axis2, color = mean.mahalanobis )) +
+  scale_color_viridis() +
+  facet_grid(c("method", "cell.count"),
+             labeller = "label_both") +
+  # geom_point(data = centroids.plot, aes(x=x.centroid, y=y.centroid), color="red") +
+  theme_pubclean()
+
+
+pdf("SCMP/analysis/plots/distance-metrics/mahalanobis-dist/mean-summary-mahalanobis.plot.pdf", height =8,width=6)
+ggboxplot(dplyr::filter(mahalanobis_dist_plot, data_balance == "balanced"), x = "cell.count",y = "mean.mahalanobis",
+          facet.by = "method")
+dev.off()
+
+pdf("SCMP/analysis/plots/distance-metrics/mahalanobis-dist/mean-unbalanced-summary-mahalanobis.plot.pdf", height =8,width=6)
+ggboxplot(dplyr::filter(mahalanobis_dist_plot, data_balance == "unbalanced"), x = "cell.count",y = "mean.mahalanobis",
+          facet.by = "method" , yscale =  "log2") +
+  rotate_x_text(90)
+dev.off()
+
+
+######################
+## the golden ratio ##
+######################
+
+
+
+
+
+
+
+
+
 ## all aggregated centroid data (very large data)
 ##### too much data, difficult to plot
 # centroid.dists <- data.table::fread("SCMP/data/summary-tables/dist-from-centroid_full-analysis.csv")

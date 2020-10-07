@@ -194,7 +194,8 @@ generate_subset <- function(data, subset_number, label.levels = NULL, balanced_d
     ## data characteristics and output
     output_filename <<- paste0(output_filepath, "processed_", subset_number, "-cells_", features_summary,"_", balanced_data, "_")
     data.input <- dat.clean %>%
-      dplyr::select("labels", cell.id, all_of(features))
+      dplyr::select(labels, cell.id, all_of(features)) %>%
+      ungroup()
     
   } else if (balanced_data == "balanced") {
     print("subsetting balanced data")
@@ -209,7 +210,8 @@ generate_subset <- function(data, subset_number, label.levels = NULL, balanced_d
     
     data.input <- dat.clean %>%
       ungroup() %>%
-      dplyr::select("labels", cell.id, all_of(features))
+      dplyr::select(labels, cell.id, all_of(features)) %>% 
+      ungroup() 
     
   } else if (balanced_data == "unbalanced_minimum") { ## subsets samples while maintaining distribution but extracts a MINIMUM # of cells for each cell first
     print("subsetting unbalanced data with a minimum # of cells")

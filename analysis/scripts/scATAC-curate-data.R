@@ -1,3 +1,5 @@
+
+library(SummarizedExperiment)
 ###########
 ## scATC ##
 ###########
@@ -5,8 +7,10 @@
 scdata <- readRDS("/Users/mamouzgar/data/pd1-epigenetics/data/Satpathy2019NatBiotech/Satpathy_TME_scATAC_MeeladPeaks.rds")
 
 
-se <- SummarizedExperiment(t(assay(scdata, "counts")))
+se <- SummarizedExperiment(assay(scdata, "counts"))
 # Too large, let's just use the most variable peaks
+column_sums <- colSums(assay(se))
+
 
 colVars_sparse <- function(sum.exp) { 
   
@@ -20,8 +24,12 @@ colVars_sparse <- function(sum.exp) {
 
 
 variance.features <- colVars_sparse(assay(scdata))
+cpm <- function(mat){
+  t(t(mat)/colSums(mat))*1000000
+}
+depth.normal <- assay(scdata)/colSums(assay(scdata))
 
-
+lapply( assay(scdata))
 ## compute variance for each peak
 colVars_spm <- function( spm ) {
   stopifnot( methods::is( spm, "dgCMatrix" ) )
