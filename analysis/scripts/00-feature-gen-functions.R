@@ -36,7 +36,7 @@ pca_function <- function(input.data) {
   
   algorithm_filename <<-  paste0(output_filename, "pca.csv")
   write.table(pca.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
-  saveRDS(pca.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "pca.RDS"))
+  # saveRDS(pca.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "pca.RDS"))
   
   print("pca is complete")
   return(pca.data)
@@ -79,7 +79,7 @@ tsne_function <- function(input.data, pca.prior = FALSE, perplexity.value = NULL
   
   algorithm_filename <<- paste0(output_filename, "tsne.csv")
   write.table(tsne.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
-  saveRDS(tsne.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "tsne.RDS"))
+  # saveRDS(tsne.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "tsne.RDS"))
   
   print("tsne is complete")
   return(tsne.data)
@@ -103,7 +103,7 @@ umap_function <- function(input.data, custom.config = NULL )  {
   
   algorithm_filename <<- paste0(output_filename, "umap.csv")
   write.table(umap.data, algorithm_filename,sep = ",", row.names = FALSE, col.names = TRUE)
-  saveRDS(umap.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "umap.RDS"))
+  # saveRDS(umap.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "umap.RDS"))
   
   print("umap is complete")
   return(umap.data)
@@ -119,7 +119,7 @@ uwot_umap_function <- function(input.data, custom.config = NULL )  {
   
   algorithm_filename <<- paste0(output_filename, "umap.csv")
   write.table(umap.data, algorithm_filename,sep = ",", row.names = FALSE, col.names = TRUE)
-  saveRDS(umap.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "umap.RDS"))
+  # saveRDS(umap.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "umap.RDS"))
   
   print("umap is complete")
   return(umap.data)
@@ -153,7 +153,7 @@ phate_function <-  function(input.data, knn.value = NULL, decay.value = NULL, ga
   
   algorithm_filename <<- paste0(output_filename, "phate.csv")
   write.table(phate.data, algorithm_filename, sep = ",", row.names = FALSE, col.names = TRUE)
-  saveRDS(phate.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "phate.RDS"))
+  # saveRDS(phate.model, paste0(output_filepath, "RDS-files/", "processed_", subset_number, "-cells_", features_summary, "_", balanced_data, "_", "phate.RDS"))
   
   print("phate is complete")
   return(phate.data)

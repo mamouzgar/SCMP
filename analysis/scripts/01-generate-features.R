@@ -27,7 +27,22 @@ source("SCMP/analysis/scripts/00-feature-gen-functions.R")
 ##########
 ##########
 ##########
-
+## runs various clustering functions and calls generate_final_datatables to generate final summary table
+run_algorithms <- function(data.input) { 
+  
+  pca_output <- pca_function(data.input)
+  generate_final_datatables(pca_output)
+  
+  # tsne_output <- tsne_function(data.input)
+  # generate_final_datatables(tsne_output)
+  
+  phate_output <- phate_function(data.input, gamma.value = 0)
+  generate_final_datatables(phate_output)
+  
+  umap_output <- umap_function(data.input)
+  generate_final_datatables(umap_output)
+  
+}
 #############################################################
 ## LDA-scatterbody channels - different clustering methods ##
 #############################################################
@@ -35,11 +50,13 @@ source("SCMP/analysis/scripts/00-feature-gen-functions.R")
 #############################################################
 
 cat("reading global variables")
-dat <- data.table::fread("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/processed_LDaxes.csv", sep = ",", stringsAsFactors = FALSE)
-dat[ , "cell.id"] <- 1:nrow(dat)
+dat <- data.table::fread("fh-metabolism/data/analysis-ready/invitro-tcells-CD8-3ea6.csv")
+dat <- dat %>% 
+  dplyr::filter(grepl("naive", gate.source)) %>% 
+  mutate(cell.id = 1:nrow(.)) 
 
 ## rename label of interest
-dat$labels <- dat$gate 
+dat$labels <- dat$ 
 dat$gate <- NULL
 
 output_filepath <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/" ## output directory 
@@ -101,9 +118,11 @@ lapply(samples, function(filepath){
 
 
 
+t<-runif(4)
 
-
-
+t2 <- c(t, runif(30))
+t
+t2
 
 
 
