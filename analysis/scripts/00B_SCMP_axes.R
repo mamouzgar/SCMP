@@ -181,6 +181,7 @@ hybridSubsetSelection <- function(x, y, two.d=TRUE) {
     unlist() %>%
     names(.)[.]
   lda.out <- lda(y~., data=x[, markers, with=F])
+  assign("lda.model.output", lda.out, envir = .GlobalEnv)
   if(two.d) return(lda.out$scaling[, 1:2])
   return(lda.out$scaling[, 1, drop=F])
 }

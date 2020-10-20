@@ -141,7 +141,8 @@ dat
 head(dat)
 all_na <- function(x) any(!is.na(x))
 dat.clean <- dat %>%
-  filter(grepl("3ea6", filename)) %>%
+  # filter(grepl("3ea6", filename)) %>%
+  filter(grepl("c393", filename)) %>%
   select_if(all_na) %>%
   filter(H3_p < 0.1) %>%
   dplyr::select(-mahalanobis_dist, -Time, -Event_length, -H3_p, -IdU,-barium, -dead, -BC102,-DNA,-BC104,-BC105,-BC106,-BC108, -beadDist,-bc_separation_dist) %>%
@@ -153,7 +154,7 @@ dat.clean$labels = dat.clean$sample.id
 dat.clean$sample.id <- NULL
 
 dat <- dat.clean
-output_filepath <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/fh-metabolism/" ## output directory 
+output_filepath <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/fh-metabolism/c393" ## output directory 
 features <- colnames(dat.clean)[-c(46,47)]
 
 features_summary <- "metabolism"
@@ -217,7 +218,8 @@ dat
 head(dat)
 all_na <- function(x) any(!is.na(x))
 dat.clean <- dat %>%
-  filter(grepl("3ea6", filename)) %>%
+  # filter(grepl("3ea6", filename)) %>%
+  filter(grepl("c393", filename)) %>%
   select_if(all_na) %>%
   filter(H3_p < 0.1) %>%
   dplyr::select(-mahalanobis_dist, -Time, -Event_length, -H3_p, -IdU,-barium, -dead, -BC102,-DNA,-BC104,-BC105,-BC106,-BC108, -beadDist,-bc_separation_dist) %>%
@@ -231,7 +233,8 @@ dat.clean$sample.id <- NULL
 ## get sampled-cells for lda
 output_path <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/fh-metabolism/sampled-cells/"
 subsetted.files <- list.files("SCMP/data/analysis-ready/fh-metabolism/", full.names = TRUE) %>%
-  .[grepl("umap",.)]
+  # .[grepl("umap",.)]
+  .[grepl("pca",.)] %>%  .[grepl("c393",.)]
 
 lapply(subsetted.files, function(filepath) {
   print(filepath)
@@ -241,7 +244,8 @@ lapply(subsetted.files, function(filepath) {
     filter(cell.id %in% methodready.df$cell.id)
   
   file.name <- gsub("balanced_.*","balanced",basename(filepath))
-  write.table(lda.ready.df, paste0(output_path, file.name, "_3ea6.csv"  ),sep=",",row.names = FALSE, col.names = TRUE)
+  # write.table(lda.ready.df, paste0(output_path, file.name, "_3ea6.csv"  ),sep=",",row.names = FALSE, col.names = TRUE)
+  write.table(lda.ready.df, paste0(output_path, file.name, "_c393.csv"  ),sep=",",row.names = FALSE, col.names = TRUE)
   
   
 })
