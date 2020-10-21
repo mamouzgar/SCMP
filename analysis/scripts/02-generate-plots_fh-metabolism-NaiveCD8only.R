@@ -144,7 +144,7 @@ plot.output.path <- "SCMP/analysis/plots/"
 ###########################################
 ## generate features for metabolism data ##
 ###########################################
-## ALL T-CELL DATA THROWN TOGETHER OMG SO BAD ##
+##  T-CELL NAIVE CD8 only ##
 
 cat("reading global variables")
 metadata <- data.table::fread( "fh-metabolism/data/analysis-ready/metadata-invitro-samples.csv", stringsAsFactors = FALSE) %>%
@@ -156,7 +156,7 @@ head(dat)
 all_na <- function(x) any(!is.na(x))
 dat.clean <- dat %>%
   # filter(grepl("3ea6", filename)) %>%
-  filter(grepl("c393", filename)) %>%
+  filter(grepl("c393", filename) & grepl("naive", filename) & grepl("CD8", filename)) %>%
   select_if(all_na) %>%
   filter(H3_p < 0.1) %>%
   dplyr::select(-mahalanobis_dist, -Time, -Event_length, -H3_p, -IdU,-barium, -dead, -BC102,-DNA,-BC104,-BC105,-BC106,-BC108, -beadDist,-bc_separation_dist) %>%
@@ -168,16 +168,13 @@ dat.clean$labels = dat.clean$sample.id
 dat.clean$sample.id <- NULL
 
 dat <- dat.clean
-output_filepath <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/fh-metabolism/c393" ## output directory 
-features <- colnames(dat.clean)[-c(46,47)]
+output_filepath <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/fh-metabolism/c393_CD8naive_" ## output directory 
+features <- colnames(dat.clean)[!colnames(dat.clean) %in% c("cell.id","labels")]
 
 features_summary <- "metabolism"
-label.levels <- c("CD4_naive_0", "CD4_naive_1", "CD4_naive_2", "CD4_naive_3", "CD4_naive_4","CD4_naive_5", 
-                  "CD4_memory_0", "CD4_memory_1", "CD4_memory_2", "CD4_memory_3", "CD4_memory_4","CD4_memory_5",
-                  "CD8_naive_0", "CD8_naive_1", "CD8_naive_2", "CD8_naive_3", "CD8_naive_4","CD8_naive_5", 
-                  "CD8_memory_0", "CD8_memory_1", "CD8_memory_2", "CD8_memory_3", "CD8_memory_4","CD8_memory_5")
+label.levels <- c( "CD8_naive_0", "CD8_naive_1", "CD8_naive_2", "CD8_naive_3", "CD8_naive_4","CD8_naive_5")
 balanced_data <- "balanced" ## options are: "balanced" or "unbalanced" or "unbalanced_minimum" you can specify the minimum count
-subset_numbers <- c(1000, 4000,  8336 ) ## for unbalanced or unbalanced_minimum data
+subset_numbers <- c(1000, 4000,  min(10000) ) ## for unbalanced or unbalanced_minimum data
 
 
 # balanced_data <- "balanced" ## options are: "balanced" or "unbalanced"
@@ -231,7 +228,7 @@ head(dat)
 all_na <- function(x) any(!is.na(x))
 dat.clean <- dat %>%
   # filter(grepl("3ea6", filename)) %>%
-  filter(grepl("c393", filename)) %>%
+  filter(grepl("c393", filename) & grepl("naive", filename) & grepl("CD8", filename)) %>%
   select_if(all_na) %>%
   filter(H3_p < 0.1) %>%
   dplyr::select(-mahalanobis_dist, -Time, -Event_length, -H3_p, -IdU,-barium, -dead, -BC102,-DNA,-BC104,-BC105,-BC106,-BC108, -beadDist,-bc_separation_dist) %>%
@@ -246,7 +243,8 @@ dat.clean$sample.id <- NULL
 output_path <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/fh-metabolism/sampled-cells/"
 subsetted.files <- list.files("SCMP/data/analysis-ready/fh-metabolism/", full.names = TRUE) %>%
   # .[grepl("umap",.)]
-  .[grepl("pca",.)] %>%  .[grepl("c393",.)]
+  .[grepl("pca",.)] %>%
+  .[grepl("c393",.)] %>% .[grepl("CD8naive",.)]
 
 lapply(subsetted.files, function(filepath) {
   print(filepath)
@@ -262,7 +260,9 @@ lapply(subsetted.files, function(filepath) {
   
 })
 
-subsetted.files <- list.files("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/fh-metabolism/sampled-cells/", full.names = TRUE)
+subsetted.files <- list.files("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/fh-metabolism/sampled-cells/", full.names = TRUE) %>%
+  .[grepl("CD8naive",.)]
+
 # methodready.df = data.table::fread(subsetted.files[1])
 output_path <- "/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/fh-metabolism/"
 
@@ -284,6 +284,7 @@ lapply(subsetted.files, function(filepath) {
     dt[, eval(paste0("ld", i)):=x %*% co[, i]]
   }
   dt$labels = metadata$labels
+  dt$cell.id <- metadata$cell.id
   
   write.table(dt, paste0(output_path, gsub(".csv", "_lda.csv", basename(filepath) )), sep = ",",row.names = FALSE, col.names = TRUE)
   
@@ -297,7 +298,9 @@ lapply(subsetted.files, function(filepath) {
 ## PLOT ##
 ##########
 subsetted.files <- list.files("/Users/mamouzgar/phd-projects/SCMP/data/analysis-ready/fh-metabolism/", full.names = TRUE) %>%
-  .[grepl("csv",.)]
+  .[grepl("csv",.)] %>%
+  .[grepl("CD8naive",.)] %>%
+  .[!grepl("tsne",.)]
 metadata <- data.table::fread( "fh-metabolism/data/analysis-ready/metadata-invitro-samples.csv", stringsAsFactors = FALSE) %>%
   mutate(sample.id = paste(cell.type,cell.subtype,day , sep  = "_"),
          cell.type.subtype = paste(cell.type, cell.subtype, sep = "_"),
@@ -310,17 +313,17 @@ lapply(subsetted.files, function(file.path) {
     filter(day != 4)
   
   filename = gsub("processed_|-cells_metabolism|.csv","",basename(file.path))
-  outputpath = paste0("SCMP/analysis/plots/fh-metabolism/T-cells_invitro", filename, ".pdf")
+  outputpath = paste0("SCMP/analysis/plots/fh-metabolism/CD8naive_T-cells_invitro", filename, ".pdf")
   
   
   if (grepl("lda", filename)) { 
-    lda.plot <- ggpubr::ggscatter(lda.ready, x = "ld1",y="ld2", color = "day",facet.by = "cell.type.subtype", size = 0.1,
-                                  subtitle = basename(outputpath)) +
-      viridis::scale_color_viridis(discrete=TRUE) +
-      guides(color = guide_legend(override.aes = list(size=5))) 
-    pdf(outputpath, width = 6, height = 6)
-    print(lda.plot)
-    dev.off()
+    # lda.plot <- ggpubr::ggscatter(lda.ready, x = "ld1",y="ld2", color = "day",facet.by = "cell.type.subtype", size = 0.1,
+    #                               subtitle = basename(outputpath)) +
+    #   viridis::scale_color_viridis(discrete=TRUE) +
+    #   guides(color = guide_legend(override.aes = list(size=5))) 
+    # pdf(outputpath, width = 6, height = 6)
+    # print(lda.plot)
+    # dev.off()
     
   lda.plot <- ggpubr::ggscatter(lda.ready, x = "ld1",y="ld2", color = "day", size = 0.1,
                                 subtitle = basename(outputpath)) +
@@ -331,13 +334,13 @@ lapply(subsetted.files, function(file.path) {
   dev.off()
   
   } else if (grepl("pca", filename)) { 
-    lda.plot <- ggpubr::ggscatter(lda.ready, x = "PC1",y="PC2", color = "day",facet.by = "cell.type.subtype", size = 0.1,
-                                  subtitle = basename(outputpath)) +
-      viridis::scale_color_viridis(discrete=TRUE) +
-      guides(color = guide_legend(override.aes = list(size=5))) 
-    pdf(outputpath, width = 6, height = 6)
-    print(lda.plot)
-    dev.off()
+    # lda.plot <- ggpubr::ggscatter(lda.ready, x = "PC1",y="PC2", color = "day",facet.by = "cell.type.subtype", size = 0.1,
+    #                               subtitle = basename(outputpath)) +
+    #   viridis::scale_color_viridis(discrete=TRUE) +
+    #   guides(color = guide_legend(override.aes = list(size=5))) 
+    # pdf(outputpath, width = 6, height = 6)
+    # print(lda.plot)
+    # dev.off()
     
     lda.plot <- ggpubr::ggscatter(lda.ready, x = "PC1",y="PC2", color = "day", size = 0.1,
                                   subtitle = basename(outputpath)) +
@@ -347,13 +350,13 @@ lapply(subsetted.files, function(file.path) {
     print(lda.plot)
     dev.off()
   } else if (grepl("umap", filename)) { 
-    lda.plot <- ggpubr::ggscatter(lda.ready, x = "X1",y="X2", color = "day",facet.by = "cell.type.subtype", size = 0.1,
-                                  subtitle = basename(outputpath)) +
-      viridis::scale_color_viridis(discrete=TRUE) +
-      guides(color = guide_legend(override.aes = list(size=5))) 
-    pdf(outputpath, width = 6, height = 6)
-    print(lda.plot)
-    dev.off()
+    # lda.plot <- ggpubr::ggscatter(lda.ready, x = "X1",y="X2", color = "day",facet.by = "cell.type.subtype", size = 0.1,
+    #                               subtitle = basename(outputpath)) +
+    #   viridis::scale_color_viridis(discrete=TRUE) +
+    #   guides(color = guide_legend(override.aes = list(size=5))) 
+    # pdf(outputpath, width = 6, height = 6)
+    # print(lda.plot)
+    # dev.off()
     
     lda.plot <- ggpubr::ggscatter(lda.ready, x = "X1",y="X2", color = "day", size = 0.1,
                                   subtitle = basename(outputpath)) +
@@ -364,13 +367,13 @@ lapply(subsetted.files, function(file.path) {
     print(lda.plot)
     dev.off()
   } else if (grepl("phate", filename)) { 
-    lda.plot <- ggpubr::ggscatter(lda.ready, x = "PHATE1",y="PHATE2", color = "day",facet.by = "cell.type.subtype", size = 0.1,
-                                  subtitle = basename(outputpath)) +
-      viridis::scale_color_viridis(discrete=TRUE) +
-      guides(color = guide_legend(override.aes = list(size=5))) 
-    pdf(outputpath, width = 6, height = 6)
-    print(lda.plot)
-    dev.off()
+    # lda.plot <- ggpubr::ggscatter(lda.ready, x = "PHATE1",y="PHATE2", color = "day",facet.by = "cell.type.subtype", size = 0.1,
+    #                               subtitle = basename(outputpath)) +
+    #   viridis::scale_color_viridis(discrete=TRUE) +
+    #   guides(color = guide_legend(override.aes = list(size=5))) 
+    # pdf(outputpath, width = 6, height = 6)
+    # print(lda.plot)
+    # dev.off()
     
     lda.plot <- ggpubr::ggscatter(lda.ready, x = "PHATE1",y="PHATE2", color = "day", size = 0.1,
                                   subtitle = basename(outputpath)) +

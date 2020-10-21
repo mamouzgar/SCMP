@@ -278,8 +278,8 @@ run_algorithms <- function(data.input) {
   pca_output <- pca_function(data.input)
   generate_final_datatables(pca_output)
   
-  tsne_output <- tsne_function(data.input)
-  generate_final_datatables(tsne_output)
+  # tsne_output <- tsne_function(data.input)
+  # generate_final_datatables(tsne_output)
   
   phate_output <- phate_function(data.input, gamma.value = 0)
   generate_final_datatables(phate_output)
