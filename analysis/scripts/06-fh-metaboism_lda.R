@@ -196,7 +196,7 @@ metadata <- data.table::fread( "fh-metabolism/data/analysis-ready/metadata-invit
   ## start loop
   lapply(comparison.lists, function(cell.types.list){
     
-    
+    print(cell.types.list)
     dat <- lda.ready_all %>%
       dplyr::filter(grepl(cell.types.list[1], gate.source) & grepl(cell.types.list[2], gate.source))  %>%
       mutate(cell.id = 1:nrow(.),
@@ -204,8 +204,9 @@ metadata <- data.table::fread( "fh-metabolism/data/analysis-ready/metadata-invit
       dplyr::select(-Time,-Event_length, -DNA,-dead,-beadDist,-bc_separation_dist,-mahalanobis_dist,-gate.source,
                     -BC102, -BC104, -BC105, -BC106, -BC108, -BC110, -barium, -IdU, H3_p)
     
-    minimum.balanced.count <- min(table(dat$labels))
-    
+    minimum.balanced.count <- min(c(table(dat$labels),10000))
+    print(minimum.balanced.count)
+
     dat <- dat %>%
       group_by(labels) %>%
       # sample_n(minimum.balanced.count) %>%
@@ -285,7 +286,7 @@ metadata <- data.table::fread( "fh-metabolism/data/analysis-ready/metadata-invit
     
     
     
-    write.table(full.dataset, paste0("SCMP/data/summary-tables/",cell.types.list[2],cell.types.list[1], "fh-metabolism-continuous-axes-predictions.csv",sep=",",row.names = FALSE,col.names = TRUE ))
+    write.table(full.dataset, paste0("SCMP/data/summary-tables/",cell.types.list[2],cell.types.list[1], "fh-metabolism-continuous-axes-predictions.csv"),sep=",",row.names = FALSE,col.names = TRUE )
     
   })
   
