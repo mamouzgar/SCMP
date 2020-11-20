@@ -126,8 +126,32 @@ t2
 
 
 
+tst <- dat %>% group_by(gate.source) %>% sample_n(2000) %>%
+  dplyr::select(-mahalanobis_dist, -Time, -Event_length, -H3_p, -IdU,-barium, -dead, -BC102,-DNA,-BC104,-BC105,-BC106,-BC108, -beadDist,-bc_separation_dist,-cell.id)
+v.pred <- tst$gate.source
+tst$gate.source <- NULL
+cls.scatt <- clv::cls.scatt.data(tst[ 1:5,1:5] , c(1,1,2,3,2), dist="manhattan")
 
 
+intraclust = c("complete","average","centroid")
+interclust = c("single", "complete", "average","centroid", "aveToCent", "hausdorff")
 
+# once computed valuse use in both functions
+dunn1 <- clv::clv.Dunn(cls.scatt, intraclust, interclust)
+davies1 <- clv::clv.Davies.Bouldin(cls.scatt, intraclust, interclust)
 
+Dunn <- function(data,clust){
+  clv::clv.Dunn( cls.scatt.data(data,clust),
+            intracls = c("complete","average","centroid"), 
+            intercls = c("single", "complete", "average","centroid", "aveToCent", "hausdorff")
+  )}
+Davies.Bouldin <- function(data,clust) {
+  clv::clv.Davies.Bouldin( cls.scatt.data(data,clust),
+                      intracls = c("complete","average","centroid"),
+                      intercls = c("single", "complete", "average","centroid", "aveToCent", "hausdorff")
+  )}
+
+# compute indicies
+dunn2 <- Dunn(tst[ 1:5,1:5], c(1,1,2,3,2))
+davies2 <- Davies.Bouldin(tst[ 1:5,1:5], c(1,1,2,3,2))
 

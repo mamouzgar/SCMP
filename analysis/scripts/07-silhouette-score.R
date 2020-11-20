@@ -226,9 +226,8 @@ silh.results <- lapply(metabolism.files, function(filepath) {
   
   dist.matrix <- dplyr::select(df, X1,X2) %>%
     dist(., method = "euclidean")%>%
-    as.matrix(.)
+    as.matrix(.) ## this is the step that usually gives "vector memory exhausted" -I get this error for more memory-intensive tasks if i'm multi-taskin :(
   silhoutte.output <- cluster::silhouette(x = class.labels$clusters, dmatrix = dist.matrix, do.clus.stat = TRUE, do.n.k=TRUE )
-  
   
   silh.result.all<- df %>% dplyr::select(X1, X2, cell.id, labels ) %>%
     bind_cols(., data.frame(cluster = silhoutte.output[,1], neighbor = silhoutte.output[,2], sil_width = silhoutte.output[,3], filename = filename ) )
